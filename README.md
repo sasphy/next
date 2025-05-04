@@ -34,3 +34,42 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Testing
+
+We use Vitest for testing the Next.js frontend components. To run the tests:
+
+```bash
+# Run tests once
+bun test
+
+# Run tests in watch mode
+bun run test:watch 
+
+# Run tests with UI
+bun run test:ui
+
+# Run tests with coverage
+bun run test:coverage
+```
+
+### Testing with the API Server
+
+You can run the frontend with the test API server on port 4040:
+
+```bash
+# Run the test script
+./run-test-api.sh
+```
+
+Alternatively, you can run both servers and tests with the root script:
+
+```bash
+# From the project root
+../run-tests-and-start.sh
+```
+
+This script:
+1. Runs tests for both the server and frontend
+2. Starts the Elysia server on port 4040
+3. Starts the Next.js frontend on port 3000
