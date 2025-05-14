@@ -1,75 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SolBeat - Web3 Music Streaming Platform on Solana
+
+SolBeat is a revolutionary music platform built on the Solana blockchain, designed to empower both artists and listeners through decentralized music ownership and discovery.
+
+## Features
+
+- **NFT Music Ownership** - Buy and collect music as NFTs using Solana blockchain
+- **Early Vibe (EV) Rating System** - Get rewarded for discovering tracks before they become popular
+- **AI Radio Host** - Enjoy personalized introductions to new music with our AI DJ
+- **Multi-Edition Tokens** - Implemented using Metaplex Print Editions
+- **Direct Artist Support** - Artists receive royalties directly through the blockchain
+- **Social Influence** - Build your reputation as a music curator
+
+## Technology Stack
+
+- **Frontend**: Next.js 15.3.1 + React 19.1 + Tailwind v4
+- **UI Components**: shadcn/UI
+- **Blockchain**: Solana + Metaplex
+- **Backend**: Elysia (Bun) API
+- **Storage**: AWS S3 for music files
+- **Real-time Data**: Redis for caching and scoring
 
 ## Getting Started
 
-First, run the development server:
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   bun install
+   ```
+3. Set up your environment variables in `.env.local`:
+   ```
+   # Example values (replace with your own)
+   SOLANA_RPC_URL=https://api.devnet.solana.com
+   ```
+4. Start the development server:
+   ```bash
+   bun run dev
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Smart Contract Architecture
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+SolBeat uses the Metaplex NFT standard on Solana to implement multi-edition music tokens:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Master Edition NFT** - Created by the artist for each track
+- **Print Editions** - Limited copies purchased by collectors
+- **Royalty Management** - Built-in royalty distribution to artists
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Contributing
 
-## Learn More
+We welcome contributions from the community! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-To learn more about Next.js, take a look at the following resources:
+## License
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Testing
-
-We use Vitest for testing the Next.js frontend components. To run the tests:
-
-```bash
-# Run tests once
-bun test
-
-# Run tests in watch mode
-bun run test:watch 
-
-# Run tests with UI
-bun run test:ui
-
-# Run tests with coverage
-bun run test:coverage
-```
-
-### Testing with the API Server
-
-You can run the frontend with the test API server on port 4040:
-
-```bash
-# Run the test script
-./run-test-api.sh
-```
-
-Alternatively, you can run both servers and tests with the root script:
-
-```bash
-# From the project root
-../run-tests-and-start.sh
-```
-
-This script:
-1. Runs tests for both the server and frontend
-2. Starts the Elysia server on port 4040
-3. Starts the Next.js frontend on port 3000
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
