@@ -40,7 +40,7 @@ export class SolanaAPI {
     this._token = token;
     // Store in localStorage for persistence
     if (typeof window !== 'undefined') {
-      localStorage.setItem('solbeat_token', token);
+      localStorage.setItem('sasphy_token', token);
     }
   }
 
@@ -51,7 +51,7 @@ export class SolanaAPI {
     this._token = null;
     // Remove from localStorage
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('solbeat_token');
+      localStorage.removeItem('sasphy_token');
     }
   }
 
@@ -60,7 +60,7 @@ export class SolanaAPI {
    */
   initToken(): void {
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('solbeat_token');
+      const token = localStorage.getItem('sasphy_token');
       if (token) {
         this._token = token;
       }
@@ -212,6 +212,156 @@ export class SolanaAPI {
    */
   async checkOwnership(tokenId: number): Promise<APIResponse<TokenOwnership>> {
     return this.request<TokenOwnership>(`/payments/ownership/${tokenId}`);
+  }
+
+  /**
+   * Get user profile
+   */
+  async getProfile(): Promise<APIResponse<User>> {
+    return this.request<User>('/auth/profile');
+  }
+
+  /**
+   * Get user's library (tracks they have saved)
+   */
+  async getLibrary(): Promise<APIResponse<Track[]>> {
+    return this.request<Track[]>('/user/library');
+  }
+
+  /**
+   * Add a track to user's library
+   */
+  async addToLibrary(trackId: string): Promise<APIResponse<{success: boolean}>> {
+    return this.request<{success: boolean}>(`/user/library/${trackId}`, {
+      method: 'POST',
+      headers: this.getHeaders()
+    });
+  }
+
+  /**
+   * Remove a track from user's library
+   */
+  async removeFromLibrary(trackId: string): Promise<APIResponse<{success: boolean}>> {
+    return this.request<{success: boolean}>(`/user/library/${trackId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders()
+    });
+  }
+
+  /**
+   * Get tracks with optional filter
+   */
+  async getTracks(filter?: string): Promise<APIResponse<Track[]>> {
+    const endpoint = filter ? `/tracks?filter=${encodeURIComponent(filter)}` : '/tracks';
+    return this.request<Track[]>(endpoint);
+  }
+
+  /**
+   * Get popular tracks
+   */
+  async getPopularTracks(limit: number = 10): Promise<APIResponse<Track[]>> {
+    return this.request<Track[]>(`/tracks/popular?limit=${limit}`);
+  }
+
+  /**
+   * Get new releases
+   */
+  async getNewReleases(limit: number = 10): Promise<APIResponse<Track[]>> {
+    return this.request<Track[]>(`/tracks/new?limit=${limit}`);
+  }
+
+  /**
+   * Get tracks by genre
+   */
+  async getTracksByGenre(genre: string, limit: number = 10): Promise<APIResponse<Track[]>> {
+    return this.request<Track[]>(`/tracks/genre/${encodeURIComponent(genre)}?limit=${limit}`);
+  }
+
+  /**
+   * Get all playlists for the user
+   */
+  async getPlaylists(): Promise<APIResponse<Playlist[]>> {
+    return this.request<Playlist[]>('/playlists');
+  }
+
+  /**
+   * Get a specific playlist
+   */
+  async getPlaylist(playlistId: string): Promise<APIResponse<Playlist>> {
+    return this.request<Playlist>(`/playlists/${playlistId}`);
+  }
+
+  /**
+   * Create a new playlist
+   */
+  async createPlaylist(name: string, description?: string, isPublic: boolean = true): Promise<APIResponse<Playlist>> {
+    return this.request<Playlist>('/playlists', {
+      method: 'POST',
+      body: JSON.stringify({ name, description, isPublic }),
+      headers: this.getHeaders()
+    });
+  }
+
+  /**
+   * Update a playlist
+   */
+  async updatePlaylist(playlistId: string, updates: Partial<Playlist>): Promise<APIResponse<Playlist>> {
+    return this.request<Playlist>(`/playlists/${playlistId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+      headers: this.getHeaders()
+    });
+  }
+
+  /**
+   * Delete a playlist
+   */
+  async deletePlaylist(playlistId: string): Promise<APIResponse<{success: boolean}>> {
+    return this.request<{success: boolean}>(`/playlists/${playlistId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders()
+    });
+  }
+
+  /**
+   * Add a track to a playlist
+   */
+  async addTrackToPlaylist(playlistId: string, trackId: string): Promise<APIResponse<{success: boolean}>> {
+    return this.request<{success: boolean}>(`/playlists/${playlistId}/tracks/${trackId}`, {
+      method: 'POST',
+      headers: this.getHeaders()
+    });
+  }
+
+  /**
+   * Remove a track from a playlist
+   */
+  async removeTrackFromPlaylist(playlistId: string, trackId: string): Promise<APIResponse<{success: boolean}>> {
+    return this.request<{success: boolean}>(`/playlists/${playlistId}/tracks/${trackId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders()
+    });
+  }
+
+  /**
+   * Search for tracks, artists, or playlists
+   */
+  async search(query: string, type: 'all' | 'tracks' | 'artists' | 'playlists' = 'all'): Promise<APIResponse<SearchResults>> {
+    return this.request<SearchResults>(`/search?q=${encodeURIComponent(query)}&type=${type}`);
+  }
+
+  /**
+   * Get artist profile
+   */
+  async getArtist(artistId: string): Promise<APIResponse<Artist>> {
+    return this.request<Artist>(`/artists/${artistId}`);
+  }
+
+  /**
+   * Get tracks by an artist
+   */
+  async getArtistTracks(artistId: string): Promise<APIResponse<Track[]>> {
+    return this.request<Track[]>(`/artists/${artistId}/tracks`);
   }
 }
 
