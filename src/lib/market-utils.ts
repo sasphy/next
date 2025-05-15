@@ -1,4 +1,4 @@
-import { formatEther, parseEther } from 'viem';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 /**
  * Types of bonding curves supported by the contract
@@ -24,7 +24,7 @@ export interface BondingCurveParams {
  * Calculate the current price for a token based on the bonding curve
  * @param params Bonding curve parameters
  * @param currentSupply Current supply of the token
- * @returns Current price in wei
+ * @returns Current price in lamports
  */
 export const calculateCurrentPrice = (
   params: BondingCurveParams,
@@ -71,9 +71,9 @@ export const calculateCurrentPrice = (
 
 /**
  * Calculate the estimated market cap based on current supply and price
- * @param currentPrice Current token price
+ * @param currentPrice Current token price in lamports
  * @param totalSupply Total tokens in circulation
- * @returns Estimated market cap in ETH
+ * @returns Estimated market cap in lamports
  */
 export const calculateMarketCap = (
   currentPrice: bigint,
@@ -102,7 +102,7 @@ export const generateBondingCurveData = (
     // Convert to human-readable format
     dataPoints.push([
       Number(supply),
-      Number(formatEther(price))
+      Number(lamportsToSol(price))
     ]);
   }
   
@@ -110,18 +110,36 @@ export const generateBondingCurveData = (
 };
 
 /**
+ * Convert lamports to SOL
+ * @param lamports Amount in lamports
+ * @returns Amount in SOL as number
+ */
+export const lamportsToSol = (lamports: bigint): number => {
+  return Number(lamports) / LAMPORTS_PER_SOL;
+};
+
+/**
+ * Convert SOL to lamports
+ * @param sol Amount in SOL
+ * @returns Amount in lamports as bigint
+ */
+export const solToLamports = (sol: number): bigint => {
+  return BigInt(Math.floor(sol * LAMPORTS_PER_SOL));
+};
+
+/**
  * Format price for display
- * @param price Price in wei
+ * @param price Price in lamports
  * @param decimals Number of decimals to display
- * @returns Formatted price string with ETH symbol
+ * @returns Formatted price string with SOL symbol
  */
 export const formatPrice = (price: bigint, decimals = 4): string => {
-  const ethPrice = formatEther(price);
+  const solPrice = lamportsToSol(price);
   
-  // Parse the eth price to a number and format to specified decimals
-  const formattedPrice = parseFloat(ethPrice).toFixed(decimals);
+  // Format to specified decimals
+  const formattedPrice = solPrice.toFixed(decimals);
   
-  return `${formattedPrice} ETH`;
+  return `${formattedPrice} SOL`;
 };
 
 /**

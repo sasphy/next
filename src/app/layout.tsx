@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Inter, Montserrat } from 'next/font/google';
 import { SasphyProvider } from "@/components/providers/sasphy-provider";
-import { WalletContextProvider } from "@/components/providers/wallet-provider";
+import { SolanaWalletProvider } from "@/components/wallet/solana-wallet-provider";
+import { MusicPlayerProvider } from "@/components/music/music-player-context";
+import MusicPlayerBar from "@/components/music/music-player-bar";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import MainNavigation from "@/components/main-navigation";
 
@@ -63,15 +65,17 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <WalletContextProvider>
+          <SolanaWalletProvider>
             <SasphyProvider>
-              <div className="relative min-h-screen flex flex-col">
-                <header className="sticky top-0 z-40 backdrop-blur-lg bg-background/80 border-b border-border">
-                  <MainNavigation />
-                </header>
-                <main className="flex-1 container mx-auto px-4 sm:px-6 py-6">
-                  {children}
-                </main>
+              <MusicPlayerProvider>
+                <div className="relative min-h-screen flex flex-col">
+                  <header className="sticky top-0 z-40 backdrop-blur-lg bg-background/80 border-b border-border">
+                    <MainNavigation />
+                  </header>
+                  <main className="flex-1 container mx-auto px-4 sm:px-6 py-6">
+                    {children}
+                  </main>
+                  <MusicPlayerBar />
                 <footer className="bg-card py-8 mt-auto border-t border-border">
                   <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -117,9 +121,10 @@ export default function RootLayout({
                     </div>
                   </div>
                 </footer>
-              </div>
+                </div>
+              </MusicPlayerProvider>
             </SasphyProvider>
-          </WalletContextProvider>
+          </SolanaWalletProvider>
         </ThemeProvider>
       </body>
     </html>

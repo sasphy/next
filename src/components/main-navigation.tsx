@@ -7,7 +7,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWalletAuth } from '@/hooks/use-wallet-auth';
 import { cn } from '@/lib/utils';
-import { Search, Menu, X, Music, Home, User, Headphones, Award, Library, Disc, Heart } from 'lucide-react';
+import { Search, Menu, X, Music, Home, User, Headphones, Award, Library, Disc, Heart, Upload, Plus } from 'lucide-react';
 
 export default function MainNavigation() {
   const pathname = usePathname();
@@ -22,7 +22,8 @@ export default function MainNavigation() {
     { href: '/tracks', label: 'Explore', icon: Headphones, isActive: pathname === '/tracks' || pathname.startsWith('/tracks/') },
     { href: '/artists', label: 'Artists', icon: Disc, isActive: pathname === '/artists' || pathname.startsWith('/artists/') },
     { href: '/library', label: 'My Library', icon: Library, isActive: pathname === '/library' },
-    { href: '/leaderboard', label: 'Influence', icon: Award, isActive: pathname === '/leaderboard' }
+    { href: '/leaderboard', label: 'Influence', icon: Award, isActive: pathname === '/leaderboard' },
+    { href: '/create', label: 'Create', icon: Upload, isActive: pathname === '/create', isPrimary: true }
   ];
   
   return (
@@ -40,21 +41,24 @@ export default function MainNavigation() {
           
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center space-x-1 ml-6">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.href} 
-                href={link.href}
-                className={cn(
-                  "nav-link",
-                  link.isActive && "active"
-                )}
-              >
-                <span className="flex items-center gap-1.5">
-                  <link.icon className="h-4 w-4" />
-                  <span>{link.label}</span>
-                </span>
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              if (link.isPrimary) return null; // Don't render primary links here
+              return (
+                <Link 
+                  key={link.href} 
+                  href={link.href}
+                  className={cn(
+                    "nav-link",
+                    link.isActive && "active"
+                  )}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <link.icon className="h-4 w-4" />
+                    <span>{link.label}</span>
+                  </span>
+                </Link>
+              );
+            })}
           </div>
           
           {/* Desktop Auth and Search */}
@@ -104,6 +108,17 @@ export default function MainNavigation() {
             ) : (
               <WalletMultiButton className="!bg-primary hover:!bg-primary/90 !text-primary-foreground !py-1.5 !h-auto !min-w-0 !rounded-lg !font-medium !transition-colors" />
             )}
+            
+            {/* Create button */}
+            {navLinks.find(link => link.isPrimary) && (
+              <Link 
+                href="/create" 
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-1.5 px-4 rounded-lg font-medium flex items-center gap-1.5 ml-3 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Create
+              </Link>
+            )}
           </div>
           
           {/* Mobile Menu Button */}
@@ -144,6 +159,8 @@ export default function MainNavigation() {
                 href={link.href}
                 className={cn(
                   "block px-3 py-2.5 rounded-lg text-base font-medium flex items-center",
+                  link.isPrimary 
+                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white" :
                   link.isActive 
                     ? "bg-primary/10 text-primary" 
                     : "hover:bg-primary/5 hover:text-foreground"
