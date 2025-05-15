@@ -1,30 +1,26 @@
-const GooeyFilter = ({
-  id = "goo-filter",
-  strength = 10,
-}: {
-  id?: string
-  strength?: number
-}) => {
+'use client';
+
+import { useId } from 'react';
+
+export default function GooeyFilter() {
+  // Generate unique IDs for the filter
+  const filterId = useId();
+  const gooeyId = `gooey-${filterId}`;
+  
   return (
-    <svg className="hidden absolute">
+    <svg style={{ position: 'absolute', width: 0, height: 0 }}>
       <defs>
-        <filter id={id}>
-          <feGaussianBlur
-            in="SourceGraphic"
-            stdDeviation={strength}
-            result="blur"
-          />
+        <filter id={gooeyId}>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
           <feColorMatrix
             in="blur"
-            type="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9"
-            result="goo"
+            mode="matrix"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+            result="gooey"
           />
-          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+          <feComposite in="SourceGraphic" in2="gooey" operator="atop" />
         </filter>
       </defs>
     </svg>
-  )
+  );
 }
-
-export { GooeyFilter }
