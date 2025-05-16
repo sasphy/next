@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import env from '@/lib/env';
 
 /**
  * API route for uploading JSON metadata to Pinata
@@ -28,29 +29,7 @@ export async function POST(request: Request) {
       );
     }
     
-    // Add Pinata metadata for better organization
-    const pinataMetadata = {
-      name: metadata.name || 'sasphy-token-metadata',
-      keyvalues: {
-        app: 'sasphy-music',
-        type: 'token-metadata',
-        timestamp: new Date().toISOString(),
-      }
-    };
-    
-    // Configure options to optimize storage
-    const pinataOptions = {
-      cidVersion: 1,
-    };
-    
-    // Prepare the data to be sent
-    const pinataBody = {
-      pinataContent: metadata,
-      pinataMetadata,
-      pinataOptions,
-    };
-    
-    // Send to Pinata
+    // Make the request to Pinata
     const response = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
       method: 'POST',
       headers: {
@@ -58,25 +37,32 @@ export async function POST(request: Request) {
         'pinata_api_key': pinataApiKey,
         'pinata_secret_api_key': pinataApiSecret,
       },
-      body: JSON.stringify(pinataBody),
+      body: JSON.stringify({
+        pinataContent: metadata,
+        pinataMetadata: {
+          name: metadata.name || 'sasphy-metadata',
+        },
+      }),
     });
     
+    // Check for errors
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Pinata JSON upload failed:', error);
+      const errorText = await response.text();
+      console.error('Pinata JSON upload error:', errorText);
       return NextResponse.json(
-        { error: `Pinata JSON upload failed: ${error}` }, 
+        { error: 'Failed to upload JSON to Pinata' }, 
         { status: response.status }
       );
     }
     
+    // Return the response from Pinata
     const data = await response.json();
     return NextResponse.json(data);
     
   } catch (error) {
-    console.error('Error handling JSON upload:', error);
+    console.error('Error in upload-json route:', error);
     return NextResponse.json(
-      { error: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}` }, 
+      { error: 'Internal server error' }, 
       { status: 500 }
     );
   }

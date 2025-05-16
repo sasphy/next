@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import WalletConnectButton from './wallet/wallet-connect-button';
 import { useWalletAuth } from '@/hooks/use-wallet-auth';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -15,6 +15,13 @@ export default function MainNavigation() {
   const { isWalletConnected, isAuthenticated, signIn, signOut } = useWalletAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // Track if component is mounted for client-side rendering
+  const [mounted, setMounted] = useState(false);
+  
+  // Set mounted to true once component is mounted
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Define navigation links
   const navLinks = [
@@ -43,7 +50,7 @@ export default function MainNavigation() {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-            <Image src="/logo.svg" className="invert ml-2" alt="Sasphy Logo" width={32} height={32} />
+            <Image src="/logo.svg" className="invert mr-2" alt="Sasphy Logo" width={32} height={32} />
               <span className="text-2xl font-display font-bold text-white">
                 sasphy
               </span>
@@ -97,7 +104,7 @@ export default function MainNavigation() {
               </div>
             )}
             
-            {isWalletConnected ? (
+            {mounted && isWalletConnected ? (
               <div className="flex items-center gap-2">
                 {isAuthenticated ? (
                   <button 
@@ -114,10 +121,10 @@ export default function MainNavigation() {
                     Sign In
                   </button>
                 )}
-                <WalletMultiButton className="!bg-primary hover:!bg-primary/90 !text-primary-foreground !py-1.5 !h-auto !min-w-0 !rounded-lg !font-medium !transition-colors" />
+                <WalletConnectButton />
               </div>
             ) : (
-              <WalletMultiButton className="!bg-primary hover:!bg-primary/90 !text-primary-foreground !py-1.5 !h-auto !min-w-0 !rounded-lg !font-medium !transition-colors" />
+              <WalletConnectButton />
             )}
             
             {/* Create button */}
@@ -185,7 +192,7 @@ export default function MainNavigation() {
             
             {/* Mobile wallet buttons */}
             <div className="pt-4 pb-2 border-t border-border mt-4">
-              {isWalletConnected ? (
+              {mounted && isWalletConnected ? (
                 <div className="space-y-3">
                   {isAuthenticated ? (
                     <button 
@@ -208,10 +215,10 @@ export default function MainNavigation() {
                       Sign In
                     </button>
                   )}
-                  <WalletMultiButton className="!bg-primary hover:!bg-primary/90 !text-primary-foreground !py-2.5 !h-auto !w-full !rounded-lg !font-medium !transition-colors" />
+                  <WalletConnectButton />
                 </div>
               ) : (
-                <WalletMultiButton className="!bg-primary hover:!bg-primary/90 !text-primary-foreground !py-2.5 !h-auto !w-full !rounded-lg !font-medium !transition-colors" />
+                <WalletConnectButton />
               )}
             </div>
           </div>

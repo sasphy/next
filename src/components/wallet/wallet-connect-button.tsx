@@ -1,6 +1,6 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,30 @@ import { truncateAddress } from '@/lib/utils';
 require('@solana/wallet-adapter-react-ui/styles.css');
 
 const WalletConnectButton: FC = () => {
+  // Use a state to track client-side rendering
+  const [mounted, setMounted] = useState(false);
   const { publicKey, connecting, disconnecting } = useWallet();
+
+  // Set mounted to true after component mounts to ensure we're on the client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // If not mounted yet (server-side), render a placeholder button
+  if (!mounted) {
+    return (
+      <div className="wallet-button-wrapper">
+        <Button className="custom-wallet-button">
+          Connect Wallet
+        </Button>
+      </div>
+    );
+  }
 
   // Custom styles for the wallet button
   return (
     <div className="wallet-button-wrapper">
-      <WalletMultiButton className="custom-wallet-button" />
+      <WalletMultiButton className="custom-wallet-button !bg-primary hover:!bg-primary/90 !text-primary-foreground !py-1.5 !h-auto !min-w-0 !rounded-lg !font-medium !transition-colors" />
       
       {/* Custom styles will be applied in globals.css */}
       <style jsx global>{`
@@ -47,6 +65,13 @@ const WalletConnectButton: FC = () => {
         
         .wallet-adapter-modal-button-close {
           background: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        /* Fix for hydration issues */
+        .wallet-adapter-button-start-icon {
+          display: flex;
+          align-items: center;
+          margin-right: 8px;
         }
       `}</style>
     </div>

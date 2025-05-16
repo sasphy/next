@@ -1,162 +1,6 @@
 import { PinataSDK } from 'pinata';
 import env from '@/lib/env';
 
-// Define metadata interface
-interface TrackMetadata {
-  name: string;
-  symbol: string;
-  description: string;
-  genre: string;
-  artist: string;
-  artistAddress: string;
-  audio: string;
-  image: string;
-  created_at: string;
-  initialPrice?: string;
-  finalPrice?: string;
-  maxSupply?: string;
-  curveType?: string;
-  [key: string]: unknown;
-}
-
-// Initialize Pinata client
-let pinata: PinataSDK | null = null;
-
-/**
- * Initialize the Pinata client
- */
-export const initializePinata = () => {
-  try {
-    // Get Pinata JWT from environment
-    const pinataJwt = process.env.PINATA_JWT || env.pinataJwt;
-    
-    // Get gateway URL and format it properly
-    let pinataGateway = process.env.NEXT_PUBLIC_GATEWAY_URL || env.gatewayUrl;
-    if (pinataGateway) {
-      // Remove trailing slashes
-      pinataGateway = pinataGateway.replace(/\/+$/, '');
-      // Remove /ipfs suffix if present
-      pinataGateway = pinataGateway.replace(/\/ipfs$/, '');
-    }
-    
-    // Check if JWT is available
-    if (!pinataJwt) {
-      console.error('Missing Pinata API credentials - JWT not found');
-      return;
-    }
-    
-    // Initialize Pinata SDK with the correct configuration format
-    pinata = new PinataSDK({ 
-      pinataJwt,
-      pinataGateway
-    });
-    
-    console.log('Pinata initialized with JWT successfully');
-    if (pinataGateway) {
-      console.log('Using gateway:', pinataGateway);
-    } else {
-      console.log('No gateway specified, using Pinata default gateway');
-    }
-  } catch (error) {
-    console.error('Failed to initialize Pinata client with JWT:', error);
-    pinata = null;
-  }
-};
-
-/**
- * Ensure Pinata is initialized
- */
-export const ensurePinataInitialized = () => {
-  if (!pinata) {
-    initializePinata();
-    if (!pinata) {
-      throw new Error('Failed to initialize Pinata client. Check your API credentials.');
-    }
-  }
-  return pinata;
-};
-
-/**
- * Upload a file to IPFS via Pinata
- * @param file File to upload
- * @param name Optional name for the file
- * @returns IPFS URL of the uploaded file
- */
-export const uploadFileToIPFS = async (file: File | Blob, name: string): Promise<string> => {
-  const pinataClient = ensurePinataInitialized();
-  
-  try {
-    // Use the correct method for the new SDK
-    const result = await pinataClient.upload.public.file(file as File, {
-      metadata: {
-        name: name || `file-${Date.now()}`
-      }
-    });
-    
-    console.log('File uploaded to IPFS:', result.cid);
-    
-    // Return the IPFS URL
-    return `ipfs://${result.cid}`;
-  } catch (error) {
-    console.error('Error uploading file to IPFS:', error);
-    throw new Error(`Failed to upload file to IPFS: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
-
-/**
- * Upload track metadata to IPFS
- * @param metadata Track metadata object
- * @returns IPFS URL of the uploaded metadata
- */
-export const uploadMetadataToIPFS = async (metadata: TrackMetadata): Promise<string> => {
-  const pinataClient = ensurePinataInitialized();
-  
-  try {
-    // Upload to Pinata using JSON with the correct method for the new SDK
-    const result = await pinataClient.upload.public.json(metadata, {
-      metadata: {
-        name: `metadata-${metadata.name}-${Date.now()}`
-      }
-    });
-    
-    console.log('Metadata uploaded to IPFS:', result.cid);
-    
-    // Return the IPFS URL
-    return `ipfs://${result.cid}`;
-  } catch (error) {
-    console.error('Error uploading metadata to IPFS:', error);
-    throw new Error(`Failed to upload metadata to IPFS: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
-
-/**
- * Helper to construct a track metadata object
- */
-export const createTrackMetadata = (
-  name: string,
-  symbol: string,
-  description: string,
-  genre: string,
-  artist: string,
-  artistAddress: string,
-  audioUrl: string,
-  imageUrl: string,
-  additionalProperties: Record<string, unknown> = {}
-): TrackMetadata => {
-  return {
-    name,
-    symbol,
-    description,
-    genre,
-    artist,
-    artistAddress,
-    audio: audioUrl,
-    image: imageUrl,
-    created_at: new Date().toISOString(),
-    ...additionalProperties
-  };
-};
-
 /**
  * IPFS Storage utility for Sasphy Music Platform
  * Uses Pinata for IPFS uploads
@@ -185,6 +29,166 @@ interface IPFSResult {
   imageHash: string;
 }
 
+// Define metadata interface
+interface TrackMetadata {
+  name: string;
+  symbol: string;
+  description: string;
+  genre: string;
+  artist: string;
+  artistAddress: string;
+  audio: string;
+  image: string;
+  created_at: string;
+  initialPrice?: string;
+  finalPrice?: string;
+  maxSupply?: string;
+  curveType?: string;
+  [key: string]: unknown;
+}
+
+// Initialize Pinata client
+let pinata: PinataSDK | null = null;
+
+/**
+ * Initialize the Pinata client
+ */
+export const initializePinata = () => {
+  try {
+    // Check client-side access to Pinata
+    const pinataJwt = env.pinataJwt;
+    
+    // Set up default gateway URL
+    let gatewayUrl = env.gatewayUrl || 'https://gateway.pinata.cloud';
+    
+    // Format the gateway URL properly
+    if (gatewayUrl) {
+      // Remove trailing slashes
+      gatewayUrl = gatewayUrl.replace(/\/+$/, '');
+      // Remove /ipfs suffix if present
+      gatewayUrl = gatewayUrl.replace(/\/ipfs$/, '');
+    }
+    
+    // Check if JWT is available
+    if (!pinataJwt) {
+      console.warn('Pinata JWT not found in environment. To fix this:');
+      console.warn('1. Create a .env.local file in the project root');
+      console.warn('2. Add NEXT_PUBLIC_PINATA_JWT=your_jwt_token_here');
+      console.warn('Using API proxy fallback for now...');
+      return;
+    }
+    
+    // Set up API endpoints and client configuration
+    const pinataEndpoints = {
+      pinFileToIPFS: 'https://api.pinata.cloud/pinning/pinFileToIPFS',
+      pinJSONToIPFS: 'https://api.pinata.cloud/pinning/pinJSONToIPFS'
+    };
+    
+    return {
+      pinataJwt,
+      gatewayUrl,
+      pinataEndpoints
+    };
+  } catch (error) {
+    console.error('Error initializing Pinata client:', error);
+    return null;
+  }
+};
+
+/**
+ * Ensure Pinata is initialized
+ */
+export const ensurePinataInitialized = () => {
+  if (!pinata) {
+    initializePinata();
+    if (!pinata) {
+      throw new Error('Failed to initialize Pinata client. Check your API credentials.');
+    }
+  }
+  return pinata;
+};
+
+/**
+ * Upload a file to IPFS via Pinata
+ */
+export const uploadFileToIPFS = async (file: File): Promise<{ ipfsHash: string; url: string }> => {
+  try {
+    // Create FormData object
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Call our proxy API endpoint
+    const response = await fetch('/api/ipfs-proxy/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    // Check for errors
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Error uploading to IPFS');
+    }
+    
+    // Parse response
+    const data = await response.json();
+    
+    // Get the gateway URL
+    const pinataConfig = initializePinata();
+    const gatewayUrl = pinataConfig?.gatewayUrl || 'gateway.pinata.cloud';
+    
+    // Format URL properly
+    const url = `https://${gatewayUrl}/ipfs/${data.IpfsHash}`;
+    
+    return {
+      ipfsHash: data.IpfsHash,
+      url
+    };
+  } catch (error) {
+    console.error('Error uploading file to IPFS:', error);
+    throw error;
+  }
+};
+
+/**
+ * Upload JSON metadata to IPFS via Pinata
+ */
+export const uploadJsonToIPFS = async (metadata: any): Promise<{ ipfsHash: string; url: string }> => {
+  try {
+    // Call our proxy API endpoint
+    const response = await fetch('/api/ipfs-proxy/upload-json', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ metadata }),
+    });
+    
+    // Check for errors
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Error uploading metadata to IPFS');
+    }
+    
+    // Parse response
+    const data = await response.json();
+    
+    // Get the gateway URL
+    const pinataConfig = initializePinata();
+    const gatewayUrl = pinataConfig?.gatewayUrl || 'gateway.pinata.cloud';
+    
+    // Format URL properly
+    const url = `https://${gatewayUrl}/ipfs/${data.IpfsHash}`;
+    
+    return {
+      ipfsHash: data.IpfsHash,
+      url
+    };
+  } catch (error) {
+    console.error('Error uploading metadata to IPFS:', error);
+    throw error;
+  }
+};
+
 /**
  * Upload a track and its metadata to IPFS using Pinata
  */
@@ -193,74 +197,33 @@ export async function uploadTrackToIPFS(
   imageFile: File, 
   metadata: MetadataObject
 ): Promise<IPFSResult> {
-  // First upload the audio and image files
-  const formData = new FormData();
-  formData.append('file', audioFile);
-  
-  const audioRes = await fetch('/api/ipfs-proxy/upload', {
-    method: 'POST',
-    body: formData,
-  });
-  
-  if (!audioRes.ok) {
-    const error = await audioRes.text();
-    throw new Error(`Failed to upload audio: ${error}`);
+  try {
+    // First upload the audio and image files
+    const audioResult = await uploadFileToIPFS(audioFile);
+    const imageResult = await uploadFileToIPFS(imageFile);
+    
+    // Add the URLs to the metadata
+    const metadataWithLinks = {
+      ...metadata,
+      image: imageResult.url,
+      animation_url: audioResult.url
+    };
+    
+    // Upload the metadata to IPFS
+    const metadataResult = await uploadJsonToIPFS(metadataWithLinks);
+    
+    return {
+      metadataUrl: metadataResult.url,
+      audioUrl: audioResult.url,
+      imageUrl: imageResult.url,
+      metadataHash: metadataResult.ipfsHash,
+      audioHash: audioResult.ipfsHash,
+      imageHash: imageResult.ipfsHash
+    };
+  } catch (error) {
+    console.error('Error in uploadTrackToIPFS:', error);
+    throw error;
   }
-  
-  const audioData = await audioRes.json();
-  const audioIpfsHash = audioData.IpfsHash;
-  const audioUrl = `ipfs://${audioIpfsHash}`;
-  
-  // Upload image
-  const imageFormData = new FormData();
-  imageFormData.append('file', imageFile);
-  
-  const imageRes = await fetch('/api/ipfs-proxy/upload', {
-    method: 'POST',
-    body: imageFormData,
-  });
-  
-  if (!imageRes.ok) {
-    const error = await imageRes.text();
-    throw new Error(`Failed to upload image: ${error}`);
-  }
-  
-  const imageData = await imageRes.json();
-  const imageIpfsHash = imageData.IpfsHash;
-  const imageUrl = `ipfs://${imageIpfsHash}`;
-  
-  // Create and upload metadata
-  const metadataObject: MetadataObject = {
-    ...metadata,
-    image: imageUrl,
-    animation_url: audioUrl,
-  };
-  
-  const metadataRes = await fetch('/api/ipfs-proxy/upload-json', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ metadata: metadataObject }),
-  });
-  
-  if (!metadataRes.ok) {
-    const error = await metadataRes.text();
-    throw new Error(`Failed to upload metadata: ${error}`);
-  }
-  
-  const metadataData = await metadataRes.json();
-  const metadataIpfsHash = metadataData.IpfsHash;
-  const metadataUrl = `ipfs://${metadataIpfsHash}`;
-  
-  return {
-    metadataUrl,
-    audioUrl,
-    imageUrl,
-    metadataHash: metadataIpfsHash,
-    audioHash: audioIpfsHash,
-    imageHash: imageIpfsHash,
-  };
 }
 
 /**

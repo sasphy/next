@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import env from '@/lib/env';
 
 /**
  * API route for uploading files to Pinata
@@ -29,29 +30,11 @@ export async function POST(request: Request) {
       );
     }
     
-    // Setup the FormData for Pinata
+    // Create a new FormData object for the Pinata API request
     const pinataFormData = new FormData();
     pinataFormData.append('file', file);
     
-    // Add options for better organization
-    const metadata = {
-      name: file.name,
-      keyvalues: {
-        app: 'sasphy-music',
-        timestamp: new Date().toISOString(),
-      }
-    };
-    
-    pinataFormData.append('pinataMetadata', JSON.stringify(metadata));
-    
-    // Configure options to optimize storage
-    const options = {
-      cidVersion: 1,
-    };
-    
-    pinataFormData.append('pinataOptions', JSON.stringify(options));
-    
-    // Send to Pinata
+    // Make the request to Pinata
     const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
       method: 'POST',
       headers: {
@@ -61,22 +44,24 @@ export async function POST(request: Request) {
       body: pinataFormData,
     });
     
+    // Check for errors
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Pinata upload failed:', error);
+      const errorText = await response.text();
+      console.error('Pinata upload error:', errorText);
       return NextResponse.json(
-        { error: `Pinata upload failed: ${error}` }, 
+        { error: 'Failed to upload to Pinata' }, 
         { status: response.status }
       );
     }
     
+    // Return the response from Pinata
     const data = await response.json();
     return NextResponse.json(data);
     
   } catch (error) {
-    console.error('Error handling file upload:', error);
+    console.error('Error in upload route:', error);
     return NextResponse.json(
-      { error: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}` }, 
+      { error: 'Internal server error' }, 
       { status: 500 }
     );
   }
