@@ -21,7 +21,7 @@ class AnchorProvider {
   constructor(public connection: Connection, public wallet: Wallet, public opts: any) {}
 }
 
-class SolBeatTokenClient {
+class SasphyTokenClient {
   constructor(public connection: Connection, public wallet: Wallet, public programId: PublicKey) {}
 }
 
@@ -47,7 +47,7 @@ function describeBondingCurve(type: BondingCurveType): string {
 export default function TokenDetails() {
   const [connection, setConnection] = useState<Connection | null>(null);
   const [provider, setProvider] = useState<AnchorProvider | null>(null);
-  const [client, setClient] = useState<SolBeatTokenClient | null>(null);
+  const [client, setClient] = useState<SasphyTokenClient | null>(null);
   const [tokenInfo, setTokenInfo] = useState<any | null>(null);
   const [protocolInfo, setProtocolInfo] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -77,8 +77,8 @@ export default function TokenDetails() {
           preflightCommitment: 'confirmed',
         });
         
-        // Create SolBeatTokenClient
-        const tokenClient = new SolBeatTokenClient(
+        // Create SasphyTokenClient
+        const tokenClient = new SasphyTokenClient(
           conn,
           walletAdapter,
           new PublicKey(PROGRAM_ID)
@@ -94,8 +94,8 @@ export default function TokenDetails() {
           // For this simulation, we'll use mock data
           const demoTrackInfo = {
             mint: "8s5YBCKSHpjVmqfnF6xT3mHMQZGZt5k7QNQWUVtiJ1Vn",
-            name: "SolBeat Demo Track",
-            symbol: "SOLBEAT",
+            name: "Sasphy Demo Track",
+            symbol: "SASPHY",
             uri: "https://arweave.net/X7RcKdYWZrLGw3wm3Z5QTPD8qriLe34k3M0kF3JZsQ8",
             artist: "7vCWanYCd848kSEqEbZUuamhgFhnKqDh4b2TC1fVEGg9",
             currentSupply: 0,
@@ -152,8 +152,8 @@ export default function TokenDetails() {
       // For this simulation, we'll use mock data
       const mockTokenInfo = {
         mint: mintInput,
-        name: "SolBeat Demo Track",
-        symbol: "SOLBEAT",
+        name: "Sasphy Demo Track",
+        symbol: "SASPHY",
         uri: "https://arweave.net/X7RcKdYWZrLGw3wm3Z5QTPD8qriLe34k3M0kF3JZsQ8",
         artist: "7vCWanYCd848kSEqEbZUuamhgFhnKqDh4b2TC1fVEGg9",
         currentSupply: 0,
@@ -235,7 +235,7 @@ export default function TokenDetails() {
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-6">SolBeat Token Factory</h1>
+      <h1 className="text-3xl font-bold mb-6">Sasphy Token Factory</h1>
       
       {/* Token Lookup */}
       <div className="bg-gray-100 p-4 rounded-lg mb-6">
@@ -405,7 +405,7 @@ export default function TokenDetails() {
       )}
       
       <div className="text-center text-gray-500 text-sm mt-8">
-        <p>SolBeat Token Factory v1.0.0</p>
+        <p>Sasphy Token Factory v1.0.0</p>
         <p className="mt-1">Program ID: {PROGRAM_ID}</p>
       </div>
     </div>

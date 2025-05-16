@@ -4,14 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useSasphy } from '@/components/providers/sasphy-provider';
 import { Track } from '@/lib/types';
 import { toast } from 'sonner';
-
-// Import Fiesta components
-import FiestaHero from '@/components/fiesta/fiesta-hero';
-import FeaturedTokens from '@/components/fiesta/featured-tokens';
 import TrendingTokens from '@/components/fiesta/trending-tokens';
-import TokenStats from '@/components/fiesta/token-stats';
+import FeaturedTokens from '@/components/fiesta/featured-tokens';
 
-export default function HomePage() {
+export default function ExploreTokensPage() {
   const { fetchTracks } = useSasphy();
   const [tokenizedTracks, setTokenizedTracks] = useState<Track[]>([]);
   const [featuredTokens, setFeaturedTokens] = useState<Track[]>([]);
@@ -69,17 +65,16 @@ export default function HomePage() {
   }, [fetchTracks]);
 
   return (
-    <div className="space-y-16 pb-16">
-      {/* Hero Section */}
-      <FiestaHero />
-      
-      {/* Token Stats Section */}
-      <div className="container mx-auto px-4">
-        <TokenStats />
+    <div className="container mx-auto px-4 py-8 space-y-12">
+      <div className="mb-8">
+        <h1 className="text-3xl md:text-4xl font-display font-bold mb-4">Explore Music Tokens</h1>
+        <p className="text-muted-foreground">
+          Discover and invest in music tokens with bonding curve economics. Support artists and earn as their popularity grows.
+        </p>
       </div>
       
       {/* Featured Tokens Section */}
-      <div className="container mx-auto px-4">
+      <div>
         {isLoading ? (
           <div className="py-12 text-center">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
@@ -100,59 +95,23 @@ export default function HomePage() {
       </div>
       
       {/* Trending Tokens Section */}
-      <div className="bg-card/30 backdrop-blur-sm py-12">
-        <div className="container mx-auto px-4">
-          {isLoading ? (
-            <div className="py-12 text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
-              <p className="mt-4 text-muted-foreground">Loading trending tokens...</p>
-            </div>
-          ) : trendingTokens.length > 0 ? (
-            <TrendingTokens 
-              tokens={trendingTokens} 
-              limit={7}
-            />
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No trending tokens found. Check back soon!</p>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* How It Works Section */}
-      <div className="container mx-auto px-4 py-12">
-        <h2 className="text-2xl md:text-3xl font-display font-bold mb-10 text-center">
-          How Bonding Curves Work
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            {
-              step: "01",
-              title: "Early Adoption",
-              description: "Early supporters pay lower prices when buying tokens, as prices start low on the bonding curve."
-            },
-            {
-              step: "02",
-              title: "Price Discovery",
-              description: "As more people buy tokens, the price increases according to the bonding curve formula."
-            },
-            {
-              step: "03",
-              title: "Market Liquidity",
-              description: "Tokens can be sold back to the contract at any time, following the same price curve."
-            }
-          ].map((item, idx) => (
-            <div key={idx} className="relative bg-card rounded-xl p-8 border border-border">
-              <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                {item.step}
-              </div>
-              <h3 className="text-xl font-semibold mb-3 mt-2">{item.title}</h3>
-              <p className="text-muted-foreground">{item.description}</p>
-            </div>
-          ))}
-        </div>
+      <div className="pb-8">
+        {isLoading ? (
+          <div className="py-12 text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+            <p className="mt-4 text-muted-foreground">Loading trending tokens...</p>
+          </div>
+        ) : trendingTokens.length > 0 ? (
+          <TrendingTokens 
+            tokens={trendingTokens} 
+            limit={10}
+          />
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No trending tokens found. Check back soon!</p>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+} 

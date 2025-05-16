@@ -362,20 +362,20 @@ const LeaderboardPage = () => {
           // Shuffle a bit for monthly
           data = data.map(user => ({
             ...user,
-            influenceScore: Math.floor(user.influenceScore * 0.7)
-          })).sort((a, b) => b.influenceScore - a.influenceScore);
+            influenceScore: Math.floor((user.influenceScore ?? 0) * 0.7)
+          })).sort((a, b) => (b.influenceScore ?? 0) - (a.influenceScore ?? 0));
         } else if (periodFilter === 'weekly') {
           // More shuffling for weekly
           data = data.map(user => ({
             ...user,
-            influenceScore: Math.floor(user.influenceScore * 0.4)
-          })).sort((a, b) => b.influenceScore - a.influenceScore);
+            influenceScore: Math.floor((user.influenceScore ?? 0) * 0.4)
+          })).sort((a, b) => (b.influenceScore ?? 0) - (a.influenceScore ?? 0));
         } else if (periodFilter === 'daily') {
           // Even more shuffling for daily
           data = data.map(user => ({
             ...user,
-            influenceScore: Math.floor(user.influenceScore * 0.2)
-          })).sort((a, b) => b.influenceScore - a.influenceScore);
+            influenceScore: Math.floor((user.influenceScore ?? 0) * 0.2)
+          })).sort((a, b) => (b.influenceScore ?? 0) - (a.influenceScore ?? 0));
         }
         
         setLeaderboard(data);

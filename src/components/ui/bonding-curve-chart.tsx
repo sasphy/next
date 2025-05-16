@@ -1,121 +1,79 @@
-import React, { useMemo } from 'react';
-import { BondingCurveParams, BondingCurveType, generateBondingCurveData } from '@/lib/market-utils';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import React from 'react';
+import { BondingCurveParams } from '@/lib/market-utils';
 
 interface BondingCurveChartProps {
   params: BondingCurveParams;
-  currentSupply: bigint;
+  currentSupply: number;
   className?: string;
 }
 
 const BondingCurveChart: React.FC<BondingCurveChartProps> = ({ 
   params, 
-  currentSupply,
+  currentSupply, 
   className = '' 
 }) => {
-  // Generate data points for the curve
-  const data = useMemo(() => {
-    return generateBondingCurveData(params, 30);
-  }, [params]);
-  
-  // Find the current point on the curve
-  const currentPoint = useMemo(() => {
-    const supplyNumber = Number(currentSupply);
-    // Find the closest point to current supply
-    return data.find(point => Math.abs(point[0] - supplyNumber) < Number(params.maxSupply) / 30) || data[0];
-  }, [data, currentSupply, params.maxSupply]);
-  
-  // Format the data for Recharts
-  const chartData = useMemo(() => {
-    return data.map(([supply, price]) => ({
-      supply,
-      price,
-      // Add a marker for the current position
-      currentMarker: supply === currentPoint?.[0] ? currentPoint[1] : null
-    }));
-  }, [data, currentPoint]);
-  
-  // Colors based on curve type
-  const getCurveColor = () => {
-    switch (params.curveType) {
-      case BondingCurveType.LINEAR:
-        return '#6366f1'; // Indigo
-      case BondingCurveType.EXPONENTIAL:
-        return '#8b5cf6'; // Violet
-      case BondingCurveType.LOGARITHMIC:
-        return '#ec4899'; // Pink
-      case BondingCurveType.SIGMOID:
-        return '#14b8a6'; // Teal
-      default:
-        return '#8b5cf6'; // Default purple
-    }
-  };
-  
-  const curveColor = getCurveColor();
-  
+  // This is a placeholder component for the bonding curve chart
+  // In a real implementation, this would use a charting library to visualize the curve
   return (
-    <div className={`w-full h-64 ${className}`}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={chartData}
-          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-          className="motion-opacity-in-[0] motion-duration-[1s]"
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-          <XAxis 
-            dataKey="supply" 
-            label={{ 
-              value: 'Supply', 
-              position: 'insideBottomRight', 
-              offset: -5,
-              fill: 'rgba(255,255,255,0.6)'
-            }}
-            tick={{ fill: 'rgba(255,255,255,0.6)' }}
-          />
-          <YAxis 
-            label={{ 
-              value: 'Price (ETH)', 
-              angle: -90, 
-              position: 'insideLeft',
-              fill: 'rgba(255,255,255,0.6)'
-            }}
-            tick={{ fill: 'rgba(255,255,255,0.6)' }}
-          />
-          <Tooltip 
-            formatter={(value: number) => [`${value.toFixed(6)} ETH`, 'Price']}
-            labelFormatter={(label) => `Supply: ${label}`}
-            contentStyle={{ 
-              backgroundColor: 'rgba(13, 17, 23, 0.8)', 
-              borderColor: 'rgba(138, 92, 246, 0.5)',
-              borderRadius: '0.375rem',
-              backdropFilter: 'blur(8px)'
-            }}
-          />
-          <Line 
-            type="monotone" 
-            dataKey="price" 
-            stroke={curveColor} 
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 6, fill: curveColor, stroke: '#fff' }}
-            className="motion-translate-y-in-[20px] motion-opacity-in-[0] motion-duration-[0.8s]"
-          />
-          {/* Current position dot */}
-          <Line 
-            type="monotone" 
-            dataKey="currentMarker" 
-            stroke="none"
-            dot={{ 
-              r: 6, 
-              fill: '#10b981', 
-              stroke: '#fff',
-              strokeWidth: 2
-            }}
-            activeDot={false}
-            className="motion-scale-in-[0.5] motion-opacity-in-[0] motion-duration-[0.8s] motion-delay-[0.3s]"
-          />
-        </LineChart>
-      </ResponsiveContainer>
+    <div className={`bonding-curve-chart bg-card/30 rounded-lg border border-border/50 flex flex-col items-center justify-center ${className}`}>
+      <div className="text-sm text-muted-foreground px-4 py-6 text-center">
+        <div className="font-medium mb-2">{params.curveType} Bonding Curve</div>
+        <div className="text-xs mb-4">
+          Initial Price: {params.initialPrice} SOL | 
+          Current Supply: {currentSupply} / {params.maxSupply || '∞'}
+        </div>
+        
+        {/* Simplified visualization */}
+        <div className="w-full h-24 relative">
+          <div className="absolute inset-0 flex items-end justify-start">
+            {/* Generate curve visualization based on curve type */}
+            {Array.from({ length: 10 }).map((_, i) => {
+              let height = 0;
+              
+              switch (params.curveType) {
+                case 'LINEAR':
+                  // Linear growth
+                  height = 10 + (i * 6);
+                  break;
+                case 'EXPONENTIAL':
+                  // Exponential growth
+                  height = 10 + (i * i);
+                  break;
+                case 'LOGARITHMIC':
+                  // Logarithmic growth (faster initially, slower later)
+                  height = 20 + (Math.log(i + 1) * 20);
+                  break;
+                case 'SIGMOID':
+                  // S-curve (slow start, fast middle, slow end)
+                  const x = ((i - 5) / 3);
+                  const sigmoid = 1 / (1 + Math.exp(-x));
+                  height = sigmoid * 70 + 10;
+                  break;
+                default:
+                  height = 10 + (i * 6);
+              }
+              
+              // Cap height to stay within container
+              height = Math.min(height, 80);
+              
+              // Highlight current position
+              const isCurrentPosition = i === Math.floor((currentSupply / (params.maxSupply || 1000)) * 10);
+              
+              return (
+                <div
+                  key={i}
+                  className={`w-1/10 mx-0.5 ${isCurrentPosition ? 'bg-primary' : 'bg-primary/30'}`}
+                  style={{ height: `${height}%` }}
+                />
+              );
+            })}
+          </div>
+        </div>
+        
+        <div className="text-xs mt-2">
+          Current Price: {(params.initialPrice + ((params.delta || 0.01) * currentSupply)).toFixed(4)} SOL
+        </div>
+      </div>
     </div>
   );
 };

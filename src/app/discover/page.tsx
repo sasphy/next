@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSolanaWallet } from '@/hooks/use-solana-wallet';
 import { useMetaplex } from '@/hooks/use-metaplex';
 import { Track } from '@/lib/types';
-import { Disc, Clock, Search, RotateCcw, Headphones, Play, Pause, Heart, Share2, ExternalLink, Plus, Music, Waveform } from 'lucide-react';
+import { Disc, Clock, Search, RotateCcw, Headphones, Play, Pause, Heart, Share2, ExternalLink, Plus, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -21,10 +21,11 @@ const DUMMY_TRACKS: Track[] = [
     title: 'Digital Dreams',
     artist: 'CryptoBeats',
     coverImage: '/assets/album-1.jpg',
-    audioUrl: '/assets/audio-1.mp3',
+    previewUrl: '/assets/audio-1.mp3',
+    fullAudioUrl: '/assets/audio-1.mp3',
     description: 'An electronic journey through digital landscapes',
-    price: 0.5,
-    currency: 'SOL',
+    price: '0.5',
+    priceLabel: 'SOL',
     releaseDate: '2025-04-01',
     duration: 210, // seconds
     likeCount: 423,
@@ -38,10 +39,11 @@ const DUMMY_TRACKS: Track[] = [
     title: 'Blockchain Beats',
     artist: 'SOL Serenade',
     coverImage: '/assets/album-2.jpg',
-    audioUrl: '/assets/audio-2.mp3',
+    previewUrl: '/assets/audio-2.mp3',
+    fullAudioUrl: '/assets/audio-2.mp3',
     description: 'Bass-heavy beats with a crypto twist',
-    price: 0.8,
-    currency: 'SOL',
+    price: '0.8',
+    priceLabel: 'SOL',
     releaseDate: '2025-03-15',
     duration: 180,
     likeCount: 256,
@@ -55,10 +57,11 @@ const DUMMY_TRACKS: Track[] = [
     title: 'Solana Sunset',
     artist: 'Chain Harmony',
     coverImage: '/assets/album-3.jpg',
-    audioUrl: '/assets/audio-3.mp3',
+    previewUrl: '/assets/audio-3.mp3',
+    fullAudioUrl: '/assets/audio-3.mp3',
     description: 'Relaxing melodies inspired by blockchain technology',
-    price: 0.3,
-    currency: 'SOL',
+    price: '0.3',
+    priceLabel: 'SOL',
     releaseDate: '2025-04-10',
     duration: 240,
     likeCount: 189,
@@ -72,10 +75,11 @@ const DUMMY_TRACKS: Track[] = [
     title: 'Crypto Carnival',
     artist: 'Token Titans',
     coverImage: '/assets/album-4.jpg',
-    audioUrl: '/assets/audio-4.mp3',
+    previewUrl: '/assets/audio-4.mp3',
+    fullAudioUrl: '/assets/audio-4.mp3',
     description: 'High-energy dance music for crypto enthusiasts',
-    price: 1.2,
-    currency: 'SOL',
+    price: '1.2',
+    priceLabel: 'SOL',
     releaseDate: '2025-02-28',
     duration: 195,
     likeCount: 512,
@@ -89,10 +93,11 @@ const DUMMY_TRACKS: Track[] = [
     title: 'Decentralized Disco',
     artist: 'CryptoBeats',
     coverImage: '/assets/album-5.jpg',
-    audioUrl: '/assets/audio-5.mp3',
+    previewUrl: '/assets/audio-5.mp3',
+    fullAudioUrl: '/assets/audio-5.mp3',
     description: 'Funky disco tunes with a modern blockchain twist',
-    price: 0.6,
-    currency: 'SOL',
+    price: '0.6',
+    priceLabel: 'SOL',
     releaseDate: '2025-03-22',
     duration: 225,
     likeCount: 367,
@@ -106,10 +111,11 @@ const DUMMY_TRACKS: Track[] = [
     title: 'NFT Nightclub',
     artist: 'Digital Drops',
     coverImage: '/assets/album-6.jpg',
-    audioUrl: '/assets/audio-6.mp3',
+    previewUrl: '/assets/audio-6.mp3',
+    fullAudioUrl: '/assets/audio-6.mp3',
     description: 'Late night vibes for the crypto crowd',
-    price: 0.9,
-    currency: 'SOL',
+    price: '0.9',
+    priceLabel: 'SOL',
     releaseDate: '2025-04-05',
     duration: 260,
     likeCount: 428,
@@ -123,10 +129,11 @@ const DUMMY_TRACKS: Track[] = [
     title: 'Hashrate Harmony',
     artist: 'Miner Melodies',
     coverImage: '/assets/album-7.jpg',
-    audioUrl: '/assets/audio-7.mp3',
+    previewUrl: '/assets/audio-7.mp3',
+    fullAudioUrl: '/assets/audio-7.mp3',
     description: 'Smooth jazz inspired by blockchain mining',
-    price: 0.4,
-    currency: 'SOL',
+    price: '0.4',
+    priceLabel: 'SOL',
     releaseDate: '2025-03-10',
     duration: 215,
     likeCount: 296,
@@ -140,10 +147,11 @@ const DUMMY_TRACKS: Track[] = [
     title: 'Validator Vibes',
     artist: 'SOL Serenade',
     coverImage: '/assets/album-8.jpg',
-    audioUrl: '/assets/audio-8.mp3',
+    previewUrl: '/assets/audio-8.mp3',
+    fullAudioUrl: '/assets/audio-8.mp3',
     description: 'Electronic beats celebrating Solana validators',
-    price: 0.7,
-    currency: 'SOL',
+    price: '0.7',
+    priceLabel: 'SOL',
     releaseDate: '2025-04-15',
     duration: 230,
     likeCount: 342,
@@ -199,7 +207,7 @@ const TrackCard = ({ track, onClick }: { track: Track; onClick: () => void }) =>
           
           <div className="mt-3 flex justify-between items-center">
             <div className="flex items-center text-sm text-purple-200 font-medium">
-              {track.price} {track.currency}
+              {track.price} {track.priceLabel}
             </div>
             
             <div className="flex items-center gap-3">
@@ -293,7 +301,7 @@ const SwipeCard = ({ track, onPlay, currentlyPlaying }: { track: Track; onPlay: 
         <div className="flex justify-between items-center mt-2">
           <div className="flex items-center">
             <span className="bg-purple-900/30 text-purple-200 py-1 px-3 rounded-full font-medium">
-              {formatPrice(track.price)} {track.currency}
+              {formatPrice(track.price)} {track.priceLabel}
             </span>
           </div>
           
@@ -409,8 +417,8 @@ const DiscoverPage = () => {
         break;
       case 'price':
         result.sort((a, b) => {
-          const priceA = a.price || 0;
-          const priceB = b.price || 0;
+          const priceA = parseFloat(a.price) || 0;
+          const priceB = parseFloat(b.price) || 0;
           return priceA - priceB;
         });
         break;
@@ -475,7 +483,7 @@ const DiscoverPage = () => {
             <div className="bg-black/40 border border-purple-900/30 rounded-xl p-6 backdrop-blur-md">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center">
-                  <Waveform className="text-white w-6 h-6" />
+                  <Music className="text-white w-6 h-6" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">Discover Feature</h3>

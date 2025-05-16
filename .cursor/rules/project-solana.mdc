@@ -1,0 +1,52 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Sasphy Web3 Music Platform Integration Project: To-Do List
+This document outlines the tasks required for the Sasphy Web3 Music Platform integration project. The platform will combine two distinct features:
+
+Regular Streaming Platform Sasphy - Traditional audio streaming service with S3 bucket connections for tracks, covers, and metadata.
+Sasphy Fiesta - Audio tokenization platform (similar to pump.fun but for audio) that uses bonding curves for token economics.
+Repository Structure (BOTH ARE IN BOTH it is not like one is sasphy and the other is sacave)
+
+/Users/pc/apps/MPC/music-streaming/music-streaming-web3/next-solana - Next.js frontend application
+/Users/pc/apps/MPC/music-streaming/music-streaming-web3/blockchain-solana - Smart contracts and blockchain integration
+Tech Stack & Versions (Target)
+Runtime: Bun v1.2.9 (with built-in S3Client, Redis)
+Backend: Elysia 1.1 (high-performance minimalist framework)
+Frontend: Next.js 15.3.1 + React 19.1 + Tailwind v4
+UI Components: shadcn/UI
+Smart Contracts: metaplex semi-nft for solana chain implementation
+Storage:
+AWS S3 for regular streaming platform
+IPFS via Pinata for decentralized storage in Sasphy Fiesta
+Blockchain: solana (initially targeting solana Sepolia testnet)
+Project To-Do List:
+1. Implement IPFS Integration (Pinata)
+
+* [ ] Create `/src/lib/ipfs-storage.ts` for handling IPFS file uploads and interactions.
+* [ ] Implement proper error handling and initialization procedures within `ipfs-storage.ts`.
+* [ ] Add support for both API key/secret and JWT authentication methods for Pinata.
+* [ ] Develop functions within `ipfs-storage.ts` to upload audio files, cover images, and metadata to IPFS.
+2. Develop Market Utilities
+
+* [ ] Create `/src/lib/market-utils.ts` to house bonding curve calculations and related market logic.
+* [ ] Implement multiple bonding curve types (e.g., LINEAR, EXPONENTIAL, LOGARITHMIC, SIGMOID) within `market-utils.ts`.
+* [ ] Add utility functions to calculate price impact, curve progress, and market capitalization based on the selected bonding curve.
+3. Integrate Smart Contracts
+
+* [ ] Configure `wagmi.ts` (or equivalent Solana library configuration) correctly in `/src/lib/wagmi.ts` for wallet connections and contract interactions.
+* [ ] Create blockchain API utility functions in `/src/lib/blockchain-api.ts` to abstract interactions with the Solana smart contracts.
+* [ ] Define and establish the correct contract configurations (addresses, ABIs, etc.) in `/src/lib/contract-config.ts`.
+4. Implement UI Enhancements
+
+* [ ] Create a reusable bonding curve chart component in `/src/components/ui/bonding-curve-chart.tsx`.
+* [ ] Add Tailwind CSS Motion (or similar animation library) animations to all Sasphy Fiesta pages for an enhanced user experience.
+* [ ] Implement robust loading states and user-friendly error handling across the application.
+5. Develop Sasphy Fiesta Pages
+
+* [ ] Enhance the upload page (`/src/app/upload/page.tsx`) by integrating the IPFS upload functionality for audio, covers, and metadata.
+* [ ] Update the main page (`/src/app/page.tsx`) to display bonding curve progress for various tracks or tokens.
+* [ ] Improve the track detail page (`/src/app/[id]/page.tsx`) by integrating the bonding curve chart component to visualize tokenomics.
+

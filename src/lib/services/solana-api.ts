@@ -9,7 +9,7 @@ import {
 } from '../types';
 
 /**
- * API client for interacting with the SolBeat API
+ * API client for interacting with the Sasphy API
  */
 export class SolanaAPI {
   private readonly baseUrl: string;

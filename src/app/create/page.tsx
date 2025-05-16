@@ -9,6 +9,7 @@ import { Upload, Music, Image, Info, X, Disc, HelpCircle, Plus, Sparkles, AlertT
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { PublicKey } from '@solana/web3.js';
 
 // Audio player component for preview
 const AudioPreview = ({ file }: { file: File | null }) => {
@@ -93,7 +94,6 @@ const FeeCalculator = () => {
         <div className="flex justify-between">
           <span className="text-gray-300 font-medium">Total</span>
           <span className="text-white font-semibold">~0.02 SOL</span>
-        </div>
         </div>
       </div>
     </div>
@@ -246,12 +246,12 @@ const CreateMusicNFTPage = () => {
             value: genre
           }))
         ],
-        creators: [
+        creators: walletAddress ? [
           {
-            address: walletAddress,
+            address: new PublicKey(walletAddress),
             share: 100
           }
-        ]
+        ] : undefined
       };
       
       // Create NFT
@@ -640,6 +640,7 @@ const CreateMusicNFTPage = () => {
               </div>
             </div>
           )}
+        </div>
       </div>
     </div>
   );

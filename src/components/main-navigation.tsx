@@ -26,6 +26,15 @@ export default function MainNavigation() {
     { href: '/create', label: 'Create', icon: Upload, isActive: pathname === '/create', isPrimary: true }
   ];
   
+  // Update the active status of each link based on the current pathname
+  const updatedNavLinks = React.useMemo(() => {
+    return navLinks.map((link) => ({
+      ...link,
+      isActive: pathname === link.href || 
+                (pathname?.startsWith(link.href) && link.href !== "/"),
+    }));
+  }, [navLinks, pathname]);
+
   return (
     <nav className="bg-background/80 backdrop-blur-lg">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -41,14 +50,14 @@ export default function MainNavigation() {
           
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center space-x-1 ml-6">
-            {navLinks.map((link) => {
+            {updatedNavLinks.map((link) => {
               if (link.isPrimary) return null; // Don't render primary links here
               return (
                 <Link 
                   key={link.href} 
                   href={link.href}
                   className={cn(
-                    "nav-link",
+                    "nav-link hover:nav-link-hover",
                     link.isActive && "active"
                   )}
                 >
@@ -110,7 +119,7 @@ export default function MainNavigation() {
             )}
             
             {/* Create button */}
-            {navLinks.find(link => link.isPrimary) && (
+            {updatedNavLinks.find(link => link.isPrimary) && (
               <Link 
                 href="/create" 
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-1.5 px-4 rounded-lg font-medium flex items-center gap-1.5 ml-3 transition-colors"
@@ -153,7 +162,7 @@ export default function MainNavigation() {
             </div>
             
             {/* Mobile navigation links */}
-            {navLinks.map((link) => (
+            {updatedNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

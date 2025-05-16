@@ -3,8 +3,9 @@
 import { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, BrainCircuit } from 'lucide-react';
 import WaveSurfer from 'wavesurfer.js';
+import AudioSpectrum from '@/components/ui/audio-spectrum';
 
 interface WaveformPlayerProps {
   audioUrl: string;
@@ -29,12 +30,14 @@ const WaveformPlayer = ({
 }: WaveformPlayerProps) => {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [showSpectrum, setShowSpectrum] = useState(false);
   
   // Initialize wavesurfer
   useEffect(() => {
@@ -79,6 +82,8 @@ const WaveformPlayer = ({
       setCurrentTime(wavesurfer.getCurrentTime());
     });
     
+    // For WaveSurfer.js v6+, 'seek' is a valid event, but TypeScript may not recognize it
+    // @ts-ignore - WaveSurfer types may be outdated
     wavesurfer.on('seek', () => {
       setCurrentTime(wavesurfer.getCurrentTime());
     });
@@ -94,6 +99,35 @@ const WaveformPlayer = ({
       }
     };
   }, [audioUrl, autoPlay, onEnded, progressColor, volume, waveColor]);
+  
+  // Sync hidden audio element with wavesurfer
+  useEffect(() => {
+    if (!audioRef.current || !wavesurferRef.current || !isReady) return;
+    
+    // Store reference to avoid null checks within the function
+    const audio = audioRef.current;
+    
+    const syncAudio = () => {
+      if (isPlaying) {
+        if (audio.paused) {
+          audio.play().catch(err => {
+            console.error('Error playing audio element:', err);
+          });
+        }
+      } else {
+        if (!audio.paused) {
+          audio.pause();
+        }
+      }
+      
+      // Sync current time
+      if (Math.abs(audio.currentTime - currentTime) > 0.5) {
+        audio.currentTime = currentTime;
+      }
+    };
+    
+    syncAudio();
+  }, [isPlaying, currentTime, isReady]);
   
   // Handle play/pause
   const togglePlayPause = () => {
@@ -115,6 +149,10 @@ const WaveformPlayer = ({
     wavesurferRef.current.setVolume(newVolume);
     setVolume(newVolume);
     
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume;
+    }
+    
     if (newVolume === 0) {
       setIsMuted(true);
     } else {
@@ -128,9 +166,17 @@ const WaveformPlayer = ({
     
     if (isMuted) {
       wavesurferRef.current.setVolume(volume || 0.8);
+      if (audioRef.current) {
+        audioRef.current.volume = volume || 0.8;
+        audioRef.current.muted = false;
+      }
       setIsMuted(false);
     } else {
       wavesurferRef.current.setVolume(0);
+      if (audioRef.current) {
+        audioRef.current.volume = 0;
+        audioRef.current.muted = true;
+      }
       setIsMuted(true);
     }
   };
@@ -140,6 +186,11 @@ const WaveformPlayer = ({
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+  
+  // Toggle spectrum visualization
+  const toggleSpectrum = () => {
+    setShowSpectrum(prev => !prev);
   };
   
   return (
@@ -159,6 +210,28 @@ const WaveformPlayer = ({
           <p className="text-purple-300 truncate">{artist}</p>
         </div>
       </div>
+      
+      {/* Hidden audio element for spectrum analyzer */}
+      <audio 
+        ref={audioRef} 
+        src={audioUrl} 
+        className="hidden" 
+        preload="auto"
+        loop={false}
+        muted={isMuted}
+      />
+      
+      {/* Spectrum visualizer */}
+      {showSpectrum && audioRef.current && (
+        <div className="mb-4 mt-2 rounded-md overflow-hidden motion-opacity-in-[0] motion-duration-[0.3s] glass p-2">
+          <AudioSpectrum 
+            audioRef={audioRef} 
+            isPlaying={isPlaying} 
+            barColor="var(--color-primary)"
+            height={70}
+          />
+        </div>
+      )}
       
       <div className="mb-4" ref={waveformRef}></div>
       
@@ -200,25 +273,39 @@ const WaveformPlayer = ({
           >
             <SkipForward size={18} />
           </Button>
-        </div>
-        
-        <div className="flex items-center gap-2 w-24">
+          
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-gray-300 hover:text-white"
-            onClick={toggleMute}
+            className={`h-9 w-9 rounded-full text-white hover:bg-purple-800 hover:text-white ${showSpectrum ? 'bg-purple-900/40' : ''}`}
+            onClick={toggleSpectrum}
+            title="Toggle spectrum visualization"
           >
-            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            <BrainCircuit size={18} />
           </Button>
-          
+        </div>
+        
+        <div className="text-gray-300 text-sm">
+          {formatTime(duration)}
+        </div>
+      </div>
+      
+      <div className="mt-4 flex items-center gap-2">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 text-gray-300 hover:text-white"
+          onClick={toggleMute}
+        >
+          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </Button>
+        
+        <div className="w-24">
           <Slider
             defaultValue={[volume * 100]}
-            value={[isMuted ? 0 : volume * 100]}
             max={100}
             step={1}
-            onValueChange={([newVolume]) => handleVolumeChange(newVolume / 100)}
-            className="w-full"
+            onValueChange={(values) => handleVolumeChange(values[0] / 100)}
           />
         </div>
       </div>

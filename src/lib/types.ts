@@ -2,6 +2,8 @@ import { PublicKey } from '@solana/web3.js';
 
 export type PlaylistType = 'discover' | 'trending' | 'favorites' | 'recent' | 'custom' | 'artist' | 'genre';
 
+export type BondingCurveType = 'LINEAR' | 'EXPONENTIAL' | 'LOGARITHMIC' | 'SIGMOID';
+
 export interface Track {
   id: string;
   title: string;
@@ -32,6 +34,18 @@ export interface Track {
   key?: string;
   isVerified?: boolean;
   tags?: string[];
+  // Token-specific fields for Sasphy Fiesta
+  tokenized?: boolean;
+  initialPrice?: number;
+  currentPrice?: number;
+  totalSupply?: number;
+  holders?: number;
+  bondingCurve?: {
+    curveType: BondingCurveType;
+    delta: number;
+    initialSupply?: number;
+    maxSupply?: number;
+  };
 }
 
 export interface User {
