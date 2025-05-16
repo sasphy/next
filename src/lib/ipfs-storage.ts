@@ -158,137 +158,131 @@ export const createTrackMetadata = (
 };
 
 /**
- * Handle multiple file uploads for a track
- * @param audioFile Audio file
- * @param coverImageFile Cover image file
- * @param metadata Track metadata without audio/image URLs
- * @returns Object with IPFS URLs
+ * IPFS Storage utility for Sasphy Music Platform
+ * Uses Pinata for IPFS uploads
  */
-export const uploadTrackToIPFS = async (
-  audioFile: File,
-  coverImageFile: File,
-  metadata: {
-    name: string;
-    symbol: string;
-    description: string;
-    genre: string;
-    artist: string;
-    artistAddress: string;
-    created_at?: string;
-    [key: string]: unknown;
-  }
-): Promise<{
+
+interface MetadataObject {
+  name: string;
+  symbol: string;
+  description: string;
+  genre: string;
+  artist: string;
+  artistAddress: string;
+  initialPrice: string;
+  curveType: string;
+  delta: string;
+  image?: string;
+  animation_url?: string;
+}
+
+interface IPFSResult {
+  metadataUrl: string;
   audioUrl: string;
   imageUrl: string;
-  metadataUrl: string;
-}> => {
-  ensurePinataInitialized();
-  
-  try {
-    console.log('Starting IPFS uploads...');
-    
-    // Upload audio and cover image in parallel
-    const [audioUrl, imageUrl] = await Promise.all([
-      uploadFileToIPFS(audioFile, `audio-${metadata.name}`),
-      uploadFileToIPFS(coverImageFile, `cover-${metadata.name}`)
-    ]);
-    
-    console.log('Files uploaded successfully:', { audioUrl, imageUrl });
-    
-    // Create the complete metadata with file URLs - ensure all required properties are present
-    const completeMetadata: TrackMetadata = {
-      name: metadata.name,
-      symbol: metadata.symbol,
-      description: metadata.description,
-      genre: metadata.genre,
-      artist: metadata.artist,
-      artistAddress: metadata.artistAddress,
-      created_at: metadata.created_at || new Date().toISOString(),
-      audio: audioUrl,
-      image: imageUrl,
-      // Type-safe way to copy additional properties
-      ...(metadata.initialPrice ? { initialPrice: String(metadata.initialPrice) } : {}),
-      ...(metadata.finalPrice ? { finalPrice: String(metadata.finalPrice) } : {}),
-      ...(metadata.maxSupply ? { maxSupply: String(metadata.maxSupply) } : {}),
-      ...(metadata.curveType ? { curveType: String(metadata.curveType) } : {})
-    };
-    
-    // Upload the metadata
-    const metadataUrl = await uploadMetadataToIPFS(completeMetadata);
-    
-    console.log('Track successfully uploaded to IPFS:', {
-      audioUrl,
-      imageUrl,
-      metadataUrl
-    });
-    
-    return {
-      audioUrl,
-      imageUrl,
-      metadataUrl
-    };
-  } catch (error) {
-    console.error('Error uploading track to IPFS:', error);
-    throw new Error(`Failed to upload track to IPFS: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
+  metadataHash: string;
+  audioHash: string;
+  imageHash: string;
+}
 
 /**
- * Gateway URLs for displaying IPFS content
- * @param ipfsUrl IPFS URL (ipfs://...)
- * @returns HTTP URL using a public gateway
+ * Upload a track and its metadata to IPFS using Pinata
  */
-export const getIPFSGatewayUrl = (ipfsUrl: string): string => {
+export async function uploadTrackToIPFS(
+  audioFile: File, 
+  imageFile: File, 
+  metadata: MetadataObject
+): Promise<IPFSResult> {
+  // First upload the audio and image files
+  const formData = new FormData();
+  formData.append('file', audioFile);
+  
+  const audioRes = await fetch('/api/ipfs-proxy/upload', {
+    method: 'POST',
+    body: formData,
+  });
+  
+  if (!audioRes.ok) {
+    const error = await audioRes.text();
+    throw new Error(`Failed to upload audio: ${error}`);
+  }
+  
+  const audioData = await audioRes.json();
+  const audioIpfsHash = audioData.IpfsHash;
+  const audioUrl = `ipfs://${audioIpfsHash}`;
+  
+  // Upload image
+  const imageFormData = new FormData();
+  imageFormData.append('file', imageFile);
+  
+  const imageRes = await fetch('/api/ipfs-proxy/upload', {
+    method: 'POST',
+    body: imageFormData,
+  });
+  
+  if (!imageRes.ok) {
+    const error = await imageRes.text();
+    throw new Error(`Failed to upload image: ${error}`);
+  }
+  
+  const imageData = await imageRes.json();
+  const imageIpfsHash = imageData.IpfsHash;
+  const imageUrl = `ipfs://${imageIpfsHash}`;
+  
+  // Create and upload metadata
+  const metadataObject: MetadataObject = {
+    ...metadata,
+    image: imageUrl,
+    animation_url: audioUrl,
+  };
+  
+  const metadataRes = await fetch('/api/ipfs-proxy/upload-json', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ metadata: metadataObject }),
+  });
+  
+  if (!metadataRes.ok) {
+    const error = await metadataRes.text();
+    throw new Error(`Failed to upload metadata: ${error}`);
+  }
+  
+  const metadataData = await metadataRes.json();
+  const metadataIpfsHash = metadataData.IpfsHash;
+  const metadataUrl = `ipfs://${metadataIpfsHash}`;
+  
+  return {
+    metadataUrl,
+    audioUrl,
+    imageUrl,
+    metadataHash: metadataIpfsHash,
+    audioHash: audioIpfsHash,
+    imageHash: imageIpfsHash,
+  };
+}
+
+/**
+ * Get a HTTP gateway URL for an IPFS hash
+ */
+export function getIpfsGatewayUrl(ipfsUrl: string): string {
   if (!ipfsUrl) return '';
   
-  try {
-    // Get the gateway URL and JWT from environment variables
-    const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || env.gatewayUrl || 'https://indigo-leading-rabbit-443.mypinata.cloud/ipfs';
-    const jwt = process.env.PINATA_JWT || env.pinataJwt;
-    
-    // Clean up the gateway URL
-    const cleanGatewayUrl = gatewayUrl.replace(/\/+$/, '').replace(/\/ipfs$/, '');
-    
-    // Ensure the URL has a protocol (https:// or http://)
-    const gatewayWithProtocol = cleanGatewayUrl.startsWith('http') 
-      ? cleanGatewayUrl 
-      : `https://${cleanGatewayUrl}`;
-    
-    const baseGatewayUrl = `${gatewayWithProtocol}/ipfs`;
-    
-    // Add authentication to all IPFS URLs
-    const authParam = jwt ? `?pinataGatewayToken=${jwt}` : '';
-    
-    // Handle ipfs:// protocol
-    if (ipfsUrl.startsWith('ipfs://')) {
-      const cid = ipfsUrl.substring(7);
-      return `${baseGatewayUrl}/${cid}${authParam}`;
-    }
-    
-    // If it's already a HTTP URL, return as is
-    if (ipfsUrl.startsWith('http')) {
-      return ipfsUrl;
-    }
-    
-    // Handle direct CID
-    return `${baseGatewayUrl}/${ipfsUrl}${authParam}`;
-  } catch (error) {
-    console.error('Error formatting IPFS gateway URL:', error);
-    // Fallback to a simpler approach - use public IPFS gateway
-    try {
-      // Default to a public gateway if custom one fails
-      if (ipfsUrl.startsWith('ipfs://')) {
-        return `https://ipfs.io/ipfs/${ipfsUrl.substring(7)}`;
-      } else if (!ipfsUrl.startsWith('http')) {
-        return `https://ipfs.io/ipfs/${ipfsUrl}`;
-      }
-      return ipfsUrl;
-    } catch (fallbackError) {
-      console.error('Even fallback URL formatting failed:', fallbackError);
-      return ipfsUrl; // Return original URL in case of error
-    }
+  // Handle ipfs:// protocol
+  if (ipfsUrl.startsWith('ipfs://')) {
+    const hash = ipfsUrl.replace('ipfs://', '');
+    return `https://gateway.pinata.cloud/ipfs/${hash}`;
   }
-};
+  
+  // Handle direct hash
+  if (ipfsUrl.match(/^[a-zA-Z0-9]{46}$/)) {
+    return `https://gateway.pinata.cloud/ipfs/${ipfsUrl}`;
+  }
+  
+  // Already a URL
+  return ipfsUrl;
+}
 
 /**
  * Get metadata from IPFS
@@ -299,7 +293,7 @@ export const getMetadataFromIPFS = async (metadataUrl: string): Promise<TrackMet
   try {
     console.log('getMetadataFromIPFS called with URL:', metadataUrl);
     
-    const gatewayUrl = getIPFSGatewayUrl(metadataUrl);
+    const gatewayUrl = getIpfsGatewayUrl(metadataUrl);
     console.log('Fetching metadata from gateway URL:', gatewayUrl);
     
     // Validate URL format before fetching

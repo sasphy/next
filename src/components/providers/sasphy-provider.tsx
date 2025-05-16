@@ -239,24 +239,16 @@ export function SasphyProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     
     try {
-      // Fallback to mock data if API doesn't respond
-      if (typeof window !== 'undefined' && (!window.ENV?.API_URL || !sasphyApi.baseUrl)) {
-        console.warn('Using mock data because API URL is not configured correctly');
+      // IMPROVEMENT: Always generate mock data in development mode,
+      // or if API URL is not configured
+      if (process.env.NODE_ENV === 'development' || 
+          typeof window !== 'undefined' && 
+          (!window.ENV?.API_URL || !sasphyApi.baseUrl)) {
         
-        // Generate mock tracks
-        const mockTracks: Track[] = Array.from({ length: 12 }).map((_, i) => ({
-          id: `mock-${i}`,
-          title: `Mock Track ${i + 1}`,
-          artist: { id: 'mock-artist', name: 'Mock Artist' },
-          coverArt: `/api/placeholder/500/500`,
-          duration: 180 + Math.floor(Math.random() * 120),
-          genre: ['Electronic', 'Hip Hop', 'Rock', 'Pop'][Math.floor(Math.random() * 4)],
-          price: (0.1 + Math.random() * 0.5).toFixed(2),
-          releaseDate: new Date().toISOString(),
-          tokenId: 1000 + i,
-          shortAudioUrl: '/api/placeholder/audio',
-          fullAudioUrl: '/api/placeholder/audio'
-        }));
+        console.warn('⚠️ Using mock data in development environment or API URL not configured');
+        
+        // Generate consistent mock tracks
+        const mockTracks: Track[] = generateMockTracks();
         
         // Cache the mock data
         tracksCache.current.data = mockTracks;
@@ -266,58 +258,57 @@ export function SasphyProvider({ children }: { children: ReactNode }) {
       }
       
       // Make the actual API request
-      const response = await sasphyApi.getTracks(filter);
-      if (response.success && response.data) {
-        // Update cache if no filter was used
-        if (!filter) {
-          tracksCache.current.data = response.data;
-          tracksCache.current.timestamp = now;
+      try {
+        const response = await sasphyApi.getTracks(filter);
+        if (response.success && response.data) {
+          // Update cache if no filter was used
+          if (!filter) {
+            tracksCache.current.data = response.data;
+            tracksCache.current.timestamp = now;
+          }
+          return response.data;
+        } else {
+          throw new Error(response.message || 'Failed to fetch tracks');
         }
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Failed to fetch tracks');
+      } catch (apiError) {
+        console.error('⚠️ API error in fetchTracks:', apiError);
+        throw apiError; // Re-throw to be caught by outer catch
       }
     } catch (error) {
       console.error('Error in fetchTracks:', error);
       
-      // Return mock data if we're in a development environment
-      if (process.env.NODE_ENV === 'development' || typeof window !== 'undefined' && window.ENV?.IS_DEV) {
-        console.warn('Generating mock tracks due to API error');
-        
-        // Generate mock tracks
-        const mockTracks: Track[] = Array.from({ length: 12 }).map((_, i) => ({
-          id: `mock-${i}`,
-          title: `Mock Track ${i + 1}`,
-          artist: { id: 'mock-artist', name: 'Mock Artist' },
-          coverArt: `/api/placeholder/500/500`,
-          duration: 180 + Math.floor(Math.random() * 120),
-          genre: ['Electronic', 'Hip Hop', 'Rock', 'Pop'][Math.floor(Math.random() * 4)],
-          price: (0.1 + Math.random() * 0.5).toFixed(2),
-          releaseDate: new Date().toISOString(),
-          tokenId: 1000 + i,
-          shortAudioUrl: '/api/placeholder/audio',
-          fullAudioUrl: '/api/placeholder/audio'
-        }));
-        
-        // Cache the mock data
-        tracksCache.current.data = mockTracks;
-        tracksCache.current.timestamp = now;
-        
-        return mockTracks;
-      }
+      console.warn('Generating mock tracks due to API error');
       
-      // Return cached data if available, even if it's older than 5 minutes
-      if (tracksCache.current.data) {
-        toast.error('Using cached data due to network error');
-        return tracksCache.current.data;
-      }
+      // Generate mock tracks with consistent IDs
+      const mockTracks: Track[] = generateMockTracks();
       
-      return [];
+      // Cache the mock data
+      tracksCache.current.data = mockTracks;
+      tracksCache.current.timestamp = now;
+      
+      return mockTracks;
     } finally {
       tracksCache.current.isFetching = false;
       setLoading(false);
     }
   }, []);
+  
+  // Helper function to generate consistent mock tracks
+  const generateMockTracks = (): Track[] => {
+    return Array.from({ length: 12 }).map((_, i) => ({
+      id: `mock-${i}`,
+      title: `Mock Track ${i + 1}`,
+      artist: { id: 'mock-artist', name: 'Mock Artist' },
+      coverArt: `/api/placeholder/500/500`,
+      duration: 180 + Math.floor(Math.random() * 120),
+      genre: ['Electronic', 'Hip Hop', 'Rock', 'Pop'][Math.floor(Math.random() * 4)],
+      price: (0.1 + Math.random() * 0.5).toFixed(2),
+      releaseDate: new Date().toISOString(),
+      tokenId: 1000 + i,
+      shortAudioUrl: '/api/placeholder/audio',
+      fullAudioUrl: '/api/placeholder/audio'
+    }));
+  };
 
   const loadTrackDetail = async (trackId: string): Promise<Track | null> => {
     // Check cache first

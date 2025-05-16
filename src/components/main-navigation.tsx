@@ -7,6 +7,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWalletAuth } from '@/hooks/use-wallet-auth';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import { Search, Menu, X, Music, Home, User, Headphones, Award, Library, Disc, Heart, Upload, Plus } from 'lucide-react';
 
 export default function MainNavigation() {
@@ -37,13 +38,14 @@ export default function MainNavigation() {
 
   return (
     <nav className="bg-background/80 backdrop-blur-lg">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <span className="text-2xl font-display font-bold solana-gradient">
-                Sasphy
+            <Image src="/logo.svg" className="invert ml-2" alt="Sasphy Logo" width={32} height={32} />
+              <span className="text-2xl font-display font-bold text-white">
+                sasphy
               </span>
             </Link>
           </div>
@@ -150,7 +152,7 @@ export default function MainNavigation() {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background/90 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-3 space-y-1">
+          <div className="w-full px-4 py-3 space-y-1">
             {/* Mobile search */}
             <div className="relative mb-4">
               <input 

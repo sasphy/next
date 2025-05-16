@@ -16,20 +16,84 @@ declare global {
 }
 
 function EnvWarning() {
+  const [dismissed, setDismissed] = useState(false);
+  
+  // Don't render if dismissed
+  if (dismissed) return null;
+  
+  // Check window.ENV in real-time
+  const windowConvexUrl = typeof window !== 'undefined' && window.ENV?.CONVEX_URL;
+  const windowFactoryAddress = typeof window !== 'undefined' && window.ENV?.FACTORY_ADDRESS;
+  
+  // If values are already in window.ENV, show a different message
+  const hasWindowEnvValues = windowConvexUrl && windowFactoryAddress;
+  
+  // Trigger reloading of env vars from window.ENV
+  const reloadEnvVars = () => {
+    if (typeof window !== 'undefined' && window.reloadEnvVars) {
+      window.reloadEnvVars();
+    } else {
+      window.location.reload();
+    }
+  };
+  
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-[9999] p-4">
       <div className="bg-red-900/90 text-white p-6 rounded-lg max-w-xl w-full shadow-xl">
-        <h2 className="text-xl font-bold mb-4">Missing Environment Variables</h2>
-        <p className="mb-4">
-          Your app is missing critical environment variables. Please check your .env.local file and add the following:
-        </p>
-        <div className="bg-gray-900 p-4 rounded-md text-sm font-mono mb-4 overflow-auto">
-          {!env.convexUrl && <div className="text-yellow-400">NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud</div>}
-          {!env.factoryAddress && <div className="text-yellow-400">NEXT_PUBLIC_FACTORY_ADDRESS=0x5tGHM7n1mxNEqUxEGSgC2yobV11zVUPChZ8ECEQWTwRV</div>}
+        <div className="flex justify-between items-start">
+          <h2 className="text-xl font-bold mb-4">Missing Environment Variables</h2>
+          <button 
+            onClick={() => setDismissed(true)}
+            className="text-white hover:text-red-200 transition-colors"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
         </div>
-        <p className="text-sm text-gray-300">
-          After adding these variables, restart your development server.
-        </p>
+        
+        {hasWindowEnvValues ? (
+          <>
+            <p className="mb-4">
+              Environment variables are available in <code>window.ENV</code> but not in <code>process.env</code>. 
+              This is often a temporary issue during development.
+            </p>
+            <div className="flex gap-2">
+              <button 
+                onClick={reloadEnvVars} 
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition-colors"
+              >
+                Reload Environment Variables
+              </button>
+              <button 
+                onClick={() => setDismissed(true)} 
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mb-4">
+              Your app is missing critical environment variables. Please check your .env.local file and add the following:
+            </p>
+            <div className="bg-gray-900 p-4 rounded-md text-sm font-mono mb-4 overflow-auto">
+              {!env.convexUrl && !windowConvexUrl && <div className="text-yellow-400">NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud</div>}
+              {!env.factoryAddress && !windowFactoryAddress && <div className="text-yellow-400">NEXT_PUBLIC_FACTORY_ADDRESS=0x5tGHM7n1mxNEqUxEGSgC2yobV11zVUPChZ8ECEQWTwRV</div>}
+            </div>
+            <p className="text-sm text-gray-300 mb-4">
+              After adding these variables, restart your development server.
+            </p>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setDismissed(true)} 
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded transition-colors"
+              >
+                Continue Anyway
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -62,10 +126,22 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
     }
   }, []);
   
-  // Check for missing env vars client-side only
+  // Check for missing env vars client-side only and consider window.ENV
   useEffect(() => {
-    const hasMissingEnvVars = !env.convexUrl || !env.factoryAddress;
-    setShowWarning(hasMissingEnvVars);
+    // Check both env object and window.ENV
+    const windowConvexUrl = typeof window !== 'undefined' && window.ENV?.CONVEX_URL;
+    const windowFactoryAddress = typeof window !== 'undefined' && window.ENV?.FACTORY_ADDRESS;
+    
+    // Only show warning if variables are missing from both env and window.ENV
+    const hasMissingEnvVars = (!env.convexUrl && !windowConvexUrl) || 
+                           (!env.factoryAddress && !windowFactoryAddress);
+    
+    // Add a delay to allow window.ENV to be populated
+    const timer = setTimeout(() => {
+      setShowWarning(hasMissingEnvVars);
+    }, 1000); // 1-second delay
+    
+    return () => clearTimeout(timer);
   }, []);
   
   return (

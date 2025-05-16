@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import MainNavigation from "@/components/main-navigation";
 import ConvexClientProvider from "@/components/providers/convex-client-provider";
 import ConvexAuthProvider from "@/components/providers/convex-auth-provider";
+import EnvLoader from "@/components/env-loader";
 
 // Environment variables for client
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4022';
@@ -77,6 +78,8 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: ENV_SCRIPT }} />
       </head>
       <body className="antialiased">
+        {/* Load environment variables before other components */}
+        <EnvLoader />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -92,12 +95,12 @@ export default function RootLayout({
                       <header className="sticky top-0 z-40 backdrop-blur-lg bg-background/80 border-b border-border">
                         <MainNavigation />
                       </header>
-                      <main className="flex-1 container mx-auto px-4 sm:px-6 py-6">
+                      <main className="flex-1 w-full px-4 sm:px-6 py-6">
                         {children}
                       </main>
                       <MusicPlayerBar />
                     <footer className="bg-card py-8 mt-auto border-t border-border">
-                      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="w-full px-4 sm:px-6 lg:px-8">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                           <div>
                             <h3 className="text-lg font-semibold mb-4">Sasphy</h3>

@@ -45,7 +45,7 @@ const FiestaHero: React.FC = () => {
         />
       </div>
     
-      <div className="container mx-auto px-4">
+      <div className="w-full px-4">
         <div className="text-center max-w-4xl mx-auto">
           <motion.div 
             className="mb-6 inline-block"
@@ -86,7 +86,7 @@ const FiestaHero: React.FC = () => {
             transition={{ duration: 0.7, delay: 0.4 }}
           >
             <Link 
-              href="/token-factory/explore" 
+              href="/token/explore" 
               className="solana-button flex items-center justify-center gap-2 group relative overflow-hidden px-6 py-3"
             >
               <span className="relative z-10 flex items-center gap-2">
@@ -102,7 +102,7 @@ const FiestaHero: React.FC = () => {
             </Link>
             
             <Link 
-              href="/token-factory/create" 
+              href="/token/create" 
               className="button-outline flex items-center justify-center gap-2 relative overflow-hidden px-6 py-3"
             >
               <span className="relative z-10 flex items-center gap-2">

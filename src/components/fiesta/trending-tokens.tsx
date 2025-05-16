@@ -39,7 +39,7 @@ const TokenRow: React.FC<TokenRowProps> = ({ token, rank, index }) => {
       transition={{ duration: 0.4, delay: 0.05 * index }}
       className="group rounded-xl border border-border/40 bg-card/30 hover:bg-card/60 backdrop-blur-sm transition-all duration-300"
     >
-      <Link href={`/token-factory/tokens/${token.id}`} className="grid grid-cols-12 items-center p-4 gap-2">
+      <Link href={`/token/tokens/${token.id}`} className="grid grid-cols-12 items-center p-4 gap-2">
         <div className="col-span-1 text-muted-foreground font-medium">{rank}</div>
         
         <div className="col-span-6 sm:col-span-5 flex items-center gap-3">
@@ -105,7 +105,7 @@ const TrendingTokens: React.FC<TrendingTokensProps> = ({
         </div>
         
         <Link 
-          href="/token-factory/trending" 
+          href="/token/trending" 
           className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
         >
           View All

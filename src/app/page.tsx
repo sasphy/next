@@ -85,12 +85,12 @@ export default function HomePage() {
       <FiestaHero />
       
       {/* Token Stats Section */}
-      <div className="container mx-auto px-4">
+      <div className="w-full px-4">
         <TokenStats />
       </div>
       
       {/* Featured Tokens Section */}
-      <div className="container mx-auto px-4">
+      <div className="w-full px-4">
         {isLoading ? (
           <div className="py-12 text-center">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
@@ -101,7 +101,7 @@ export default function HomePage() {
             tokens={featuredTokens} 
             title="Featured Music Tokens"
             subtitle="Tokenized tracks with the most potential"
-            viewAllLink="/token-factory/featured"
+            viewAllLink="/token/featured"
           />
         ) : (
           <div className="text-center py-12">
@@ -112,7 +112,7 @@ export default function HomePage() {
       
       {/* Trending Tokens Section */}
       <div className="bg-card/30 backdrop-blur-sm py-12">
-        <div className="container mx-auto px-4">
+        <div className="w-full px-4">
           {isLoading ? (
             <div className="py-12 text-center">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
@@ -132,7 +132,7 @@ export default function HomePage() {
       </div>
       
       {/* How It Works Section */}
-      <div className="container mx-auto px-4 py-12">
+      <div className="w-full px-4 py-12">
         <h2 className="text-2xl md:text-3xl font-display font-bold mb-10 text-center">
           How Bonding Curves Work
         </h2>
