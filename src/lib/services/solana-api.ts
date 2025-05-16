@@ -12,7 +12,8 @@ import {
  * API client for interacting with the Sasphy API
  */
 export class SolanaAPI {
-  private readonly baseUrl: string;
+  // Make baseUrl publicly accessible so it can be updated
+  public baseUrl: string;
   private _token: string | null = null;
 
   /**
@@ -29,8 +30,22 @@ export class SolanaAPI {
     return this._token;
   }
 
-  constructor(baseUrl: string = '/api/blockchain') {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl?: string) {
+    // Try to get baseUrl from various sources with fallbacks
+    if (baseUrl) {
+      this.baseUrl = baseUrl;
+    } else if (typeof window !== 'undefined' && window.ENV && window.ENV.API_URL) {
+      this.baseUrl = `${window.ENV.API_URL}/blockchain`;
+    } else if (process.env.NEXT_PUBLIC_API_URL) {
+      this.baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/blockchain`;
+    } else {
+      this.baseUrl = '/api/blockchain';
+    }
+    
+    // Log the API URL for debugging
+    if (typeof window !== 'undefined') {
+      console.log(`SolanaAPI initialized with baseUrl: ${this.baseUrl}`);
+    }
   }
 
   /**

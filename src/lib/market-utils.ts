@@ -1,3 +1,5 @@
+'use client';
+
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { BondingCurveType } from './types';
 
@@ -378,4 +380,249 @@ export function generateBondingCurveData({
   }
 
   return data;
+}
+
+/**
+ * Market utilities for bonding curve calculations and token economics
+ * Provides functions for calculating token prices based on different curve types
+ */
+
+// Curve types
+export enum CurveType {
+  LINEAR = 'LINEAR',
+  EXPONENTIAL = 'EXPONENTIAL',
+  LOGARITHMIC = 'LOGARITHMIC',
+  SIGMOID = 'SIGMOID',
+}
+
+// Constants for curve calculations
+const PRECISION = 10000;
+
+/**
+ * Calculate token price based on supply and curve parameters
+ * @param curveType Type of bonding curve
+ * @param initialPrice Initial price in SOL units (e.g., 0.1)
+ * @param currentSupply Current supply of tokens
+ * @param delta Price change parameter
+ * @returns Price in SOL units
+ */
+export function calculateTokenPrice(
+  curveType: CurveType,
+  initialPrice: number,
+  currentSupply: number,
+  delta: number = 0.01
+): number {
+  // Safety check
+  if (initialPrice < 0) {
+    throw new Error("Initial price cannot be negative");
+  }
+  
+  // Bonding curve calculations
+  switch (curveType) {
+    case CurveType.LINEAR:
+      // Linear: price = initialPrice + supply * delta
+      return initialPrice + currentSupply * delta;
+      
+    case CurveType.EXPONENTIAL:
+      // Exponential: price = initialPrice + (supply² * delta / PRECISION)
+      // We divide by precision to keep numbers manageable
+      return initialPrice + (Math.pow(currentSupply, 2) * delta / PRECISION);
+      
+    case CurveType.LOGARITHMIC:
+      // Logarithmic: price = initialPrice + (delta * log(supply + 1))
+      // Add 1 to avoid log(0)
+      return initialPrice + (delta * Math.log(currentSupply + 1));
+      
+    case CurveType.SIGMOID:
+      // Sigmoid: price follows S-curve (slow start, rapid middle growth, plateau)
+      // sigmoid(x) = 1 / (1 + e^(-k * (x - x0)))
+      const midpoint = 100; // Supply at inflection point
+      const steepness = 0.05; // Controls steepness of curve
+      const sigmoid = 1 / (1 + Math.exp(-steepness * (currentSupply - midpoint)));
+      return initialPrice + delta * sigmoid * 10; // Scale to reasonable range
+      
+    default:
+      // Default to linear pricing
+      return initialPrice + currentSupply * delta;
+  }
+}
+
+/**
+ * Calculate the price impact of buying/selling a given amount of tokens
+ * @param curveType Type of bonding curve
+ * @param initialPrice Initial price in SOL units
+ * @param currentSupply Current supply of tokens
+ * @param amount Amount of tokens to buy/sell (positive for buy, negative for sell)
+ * @param delta Price change parameter
+ * @returns Object with prices and costs
+ */
+export function calculatePriceImpact(
+  curveType: CurveType,
+  initialPrice: number,
+  currentSupply: number,
+  amount: number,
+  delta: number = 0.01
+): {
+  currentPrice: number;
+  newPrice: number;
+  averagePrice: number;
+  totalCost: number;
+  priceImpactPercent: number;
+} {
+  // Validate parameters
+  if (amount === 0) {
+    throw new Error("Amount cannot be zero");
+  }
+  
+  if (amount < 0 && Math.abs(amount) > currentSupply) {
+    throw new Error("Cannot sell more tokens than current supply");
+  }
+  
+  const currentPrice = calculateTokenPrice(curveType, initialPrice, currentSupply, delta);
+  const newSupply = currentSupply + amount;
+  const newPrice = calculateTokenPrice(curveType, initialPrice, newSupply, delta);
+  
+  // For accurate cost calculation, we need to integrate the price curve
+  // For simplicity, we'll use a discrete sum approximation
+  let totalCost = 0;
+  const steps = Math.abs(amount);
+  const stepSize = amount / steps;
+  
+  for (let i = 0; i < steps; i++) {
+    const supplyAtStep = currentSupply + i * stepSize;
+    const priceAtStep = calculateTokenPrice(curveType, initialPrice, supplyAtStep, delta);
+    totalCost += priceAtStep * stepSize;
+  }
+  
+  // Calculate average price
+  const averagePrice = Math.abs(totalCost / amount);
+  
+  // Calculate price impact percentage
+  const priceImpactPercent = ((newPrice - currentPrice) / currentPrice) * 100;
+  
+  return {
+    currentPrice,
+    newPrice,
+    averagePrice,
+    totalCost,
+    priceImpactPercent
+  };
+}
+
+/**
+ * Calculate the market capitalization of a token
+ * @param curveType Bonding curve type
+ * @param initialPrice Initial price in SOL units
+ * @param currentSupply Current supply of tokens
+ * @param delta Price change parameter
+ * @returns Market cap in SOL units
+ */
+export function calculateCurveMarketCap(
+  curveType: CurveType,
+  initialPrice: number,
+  currentSupply: number,
+  delta: number = 0.01
+): number {
+  // Market cap is the area under the price curve from 0 to currentSupply
+  // For simplicity, we'll use a discrete sum approximation
+  let marketCap = 0;
+  const steps = currentSupply;
+  
+  for (let i = 0; i < steps; i++) {
+    const priceAtStep = calculateTokenPrice(curveType, initialPrice, i, delta);
+    marketCap += priceAtStep;
+  }
+  
+  return marketCap;
+}
+
+/**
+ * Calculate the position in the bonding curve
+ * Useful for visualizing where in the curve a token is
+ * @param curveType Bonding curve type
+ * @param currentSupply Current supply
+ * @param maxSupply Maximum possible supply (if applicable)
+ * @returns Percentage position in the curve (0-100)
+ */
+export function calculateCurveProgress(
+  curveType: CurveType,
+  currentSupply: number,
+  maxSupply: number = 1000
+): number {
+  // Ensure we don't divide by zero
+  if (maxSupply <= 0) {
+    throw new Error("Max supply must be positive");
+  }
+  
+  // Calculate progress percentage
+  const progress = (currentSupply / maxSupply) * 100;
+  
+  // Clamp between 0 and 100
+  return Math.max(0, Math.min(100, progress));
+}
+
+/**
+ * Generate price points for a bonding curve visualization
+ * @param curveType Type of bonding curve
+ * @param initialPrice Initial price in SOL units
+ * @param maxSupply Maximum supply for visualization
+ * @param delta Price change parameter
+ * @param points Number of data points to generate
+ * @returns Array of [supply, price] pairs
+ */
+export function generateCurvePoints(
+  curveType: CurveType,
+  initialPrice: number,
+  maxSupply: number = 1000,
+  delta: number = 0.01,
+  points: number = 100
+): Array<[number, number]> {
+  const result: Array<[number, number]> = [];
+  const step = maxSupply / points;
+  
+  for (let i = 0; i <= points; i++) {
+    const supply = i * step;
+    const price = calculateTokenPrice(curveType, initialPrice, supply, delta);
+    result.push([supply, price]);
+  }
+  
+  return result;
+}
+
+/**
+ * Convert curve type from string to enum
+ * @param curveTypeStr String representation of curve type
+ * @returns CurveType enum value
+ */
+export function parseCurveType(curveTypeStr: string): CurveType {
+  const upperCase = curveTypeStr.toUpperCase();
+  
+  switch (upperCase) {
+    case 'LINEAR':
+      return CurveType.LINEAR;
+    case 'EXPONENTIAL':
+      return CurveType.EXPONENTIAL;
+    case 'LOGARITHMIC':
+      return CurveType.LOGARITHMIC;
+    case 'SIGMOID':
+      return CurveType.SIGMOID;
+    default:
+      // Default to LINEAR if unknown
+      console.warn(`Unknown curve type: ${curveTypeStr}. Defaulting to LINEAR.`);
+      return CurveType.LINEAR;
+  }
+}
+
+/**
+ * Calculate the slippage for a transaction
+ * @param expectedPrice Expected price
+ * @param actualPrice Actual price
+ * @returns Slippage percentage
+ */
+export function calculateSlippage(expectedPrice: number, actualPrice: number): number {
+  if (expectedPrice <= 0) {
+    throw new Error("Expected price must be positive");
+  }
+  
+  return ((actualPrice - expectedPrice) / expectedPrice) * 100;
 }

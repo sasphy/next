@@ -7,10 +7,12 @@ export type BondingCurveType = 'LINEAR' | 'EXPONENTIAL' | 'LOGARITHMIC' | 'SIGMO
 export interface Track {
   id: string;
   title: string;
-  artist: string;
+  artist: string | { id: string; name: string };
   description?: string;
-  coverImage: string;
-  previewUrl: string;
+  coverImage?: string;
+  coverArt?: string;
+  previewUrl?: string;
+  shortAudioUrl?: string;
   fullAudioUrl?: string;
   price: string;
   priceLabel?: string;

@@ -36,9 +36,9 @@ const MusicPlayerBar = () => {
         {minimized ? (
           <div className="flex items-center justify-between h-full px-4">
             <div className="flex items-center gap-3">
-              {currentTrack.imageUrl && (
+              {currentTrack.coverImage && (
                 <img 
-                  src={currentTrack.imageUrl} 
+                  src={currentTrack.coverImage} 
                   alt={currentTrack.title} 
                   className="w-10 h-10 rounded-md object-cover"
                 />
@@ -116,10 +116,10 @@ const MusicPlayerBar = () => {
             </div>
             
             <WaveformPlayer
-              audioUrl={currentTrack.audioUrl}
+              audioUrl={currentTrack.fullAudioUrl || currentTrack.previewUrl || ''}
               title={currentTrack.title}
               artist={currentTrack.artist}
-              coverArt={currentTrack.imageUrl}
+              coverArt={currentTrack.coverImage}
               autoPlay={isPlaying}
               onEnded={handleTrackEnd}
             />

@@ -53,7 +53,9 @@ const TokenRow: React.FC<TokenRowProps> = ({ token, rank, index }) => {
           </div>
           <div>
             <h3 className="font-medium text-sm sm:text-base line-clamp-1">{token.title}</h3>
-            <p className="text-xs text-muted-foreground line-clamp-1">{token.artist}</p>
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              {typeof token.artist === 'string' ? token.artist : token.artist.name}
+            </p>
           </div>
         </div>
         

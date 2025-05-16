@@ -241,22 +241,53 @@ export const uploadTrackToIPFS = async (
 export const getIPFSGatewayUrl = (ipfsUrl: string): string => {
   if (!ipfsUrl) return '';
   
-  // Get the gateway URL from environment variables
-  const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || env.gatewayUrl || 'https://gateway.pinata.cloud/ipfs';
-  
-  // Handle ipfs:// protocol
-  if (ipfsUrl.startsWith('ipfs://')) {
-    const cid = ipfsUrl.substring(7);
-    return `${gatewayUrl}/${cid}`;
+  try {
+    // Get the gateway URL and JWT from environment variables
+    const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || env.gatewayUrl || 'https://indigo-leading-rabbit-443.mypinata.cloud/ipfs';
+    const jwt = process.env.PINATA_JWT || env.pinataJwt;
+    
+    // Clean up the gateway URL
+    const cleanGatewayUrl = gatewayUrl.replace(/\/+$/, '').replace(/\/ipfs$/, '');
+    
+    // Ensure the URL has a protocol (https:// or http://)
+    const gatewayWithProtocol = cleanGatewayUrl.startsWith('http') 
+      ? cleanGatewayUrl 
+      : `https://${cleanGatewayUrl}`;
+    
+    const baseGatewayUrl = `${gatewayWithProtocol}/ipfs`;
+    
+    // Add authentication to all IPFS URLs
+    const authParam = jwt ? `?pinataGatewayToken=${jwt}` : '';
+    
+    // Handle ipfs:// protocol
+    if (ipfsUrl.startsWith('ipfs://')) {
+      const cid = ipfsUrl.substring(7);
+      return `${baseGatewayUrl}/${cid}${authParam}`;
+    }
+    
+    // If it's already a HTTP URL, return as is
+    if (ipfsUrl.startsWith('http')) {
+      return ipfsUrl;
+    }
+    
+    // Handle direct CID
+    return `${baseGatewayUrl}/${ipfsUrl}${authParam}`;
+  } catch (error) {
+    console.error('Error formatting IPFS gateway URL:', error);
+    // Fallback to a simpler approach - use public IPFS gateway
+    try {
+      // Default to a public gateway if custom one fails
+      if (ipfsUrl.startsWith('ipfs://')) {
+        return `https://ipfs.io/ipfs/${ipfsUrl.substring(7)}`;
+      } else if (!ipfsUrl.startsWith('http')) {
+        return `https://ipfs.io/ipfs/${ipfsUrl}`;
+      }
+      return ipfsUrl;
+    } catch (fallbackError) {
+      console.error('Even fallback URL formatting failed:', fallbackError);
+      return ipfsUrl; // Return original URL in case of error
+    }
   }
-  
-  // If it's already a HTTP URL, return as is
-  if (ipfsUrl.startsWith('http')) {
-    return ipfsUrl;
-  }
-  
-  // Handle direct CID
-  return `${gatewayUrl}/${ipfsUrl}`;
 };
 
 /**
@@ -266,16 +297,128 @@ export const getIPFSGatewayUrl = (ipfsUrl: string): string => {
  */
 export const getMetadataFromIPFS = async (metadataUrl: string): Promise<TrackMetadata> => {
   try {
+    console.log('getMetadataFromIPFS called with URL:', metadataUrl);
+    
     const gatewayUrl = getIPFSGatewayUrl(metadataUrl);
-    const response = await fetch(gatewayUrl);
+    console.log('Fetching metadata from gateway URL:', gatewayUrl);
+    
+    // Validate URL format before fetching
+    try {
+      new URL(gatewayUrl);
+    } catch (urlError) {
+      console.error('Invalid URL format:', urlError);
+      console.error('Attempting to fix URL by adding https:// prefix');
+      
+      // Last resort fix - try adding https:// if it's missing
+      const fixedUrl = gatewayUrl.startsWith('http') ? gatewayUrl : `https://${gatewayUrl}`;
+      console.log('Fixed URL:', fixedUrl);
+      
+      // Test the fixed URL
+      try {
+        new URL(fixedUrl);
+        // If we get here, the URL is valid now, so use it
+        const response = await fetch(fixedUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        if (!response.ok) {
+          console.error(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
+          throw new Error(`Failed to fetch metadata: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Successfully fetched metadata with fixed URL');
+        
+        return data as TrackMetadata;
+      } catch (innerError) {
+        console.error('Failed to fix URL:', innerError);
+        throw new Error(`Invalid URL format: ${gatewayUrl}`);
+      }
+    }
+    
+    // Original URL looks valid, proceed with fetch ---
+    const response = await fetch(gatewayUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
     
     if (!response.ok) {
+      console.error(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
       throw new Error(`Failed to fetch metadata: ${response.statusText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('Successfully fetched metadata:', data);
+    
+    // Validate and ensure required fields
+    const metadata: TrackMetadata = {
+      name: data.name || 'Unknown Track',
+      symbol: data.symbol || 'TRACK',
+      description: data.description || '',
+      genre: data.genre || 'Unknown',
+      artist: data.artist || 'Unknown Artist',
+      artistAddress: data.artistAddress || '0x0000000000000000000000000000000000000000',
+      audio: data.audio || '',
+      image: data.image || '',
+      created_at: data.created_at || new Date().toISOString(),
+      ...data
+    };
+    
+    return metadata;
   } catch (error) {
     console.error('Error fetching metadata from IPFS:', error);
+    throw new Error('Failed to fetch metadata from IPFS');
+  }
+};
+
+/**
+ * Client-side function to fetch metadata from IPFS using our proxy API to avoid CORS issues
+ * This should be used in client components to fetch metadata safely
+ * 
+ * @param ipfsUri IPFS URI (ipfs://CID or just CID)
+ * @returns Parsed metadata object
+ */
+export const getMetadataFromIPFSProxy = async (ipfsUri: string): Promise<TrackMetadata> => {
+  try {
+    if (!ipfsUri) {
+      throw new Error('Missing IPFS URI');
+    }
+    
+    console.log('Getting metadata from IPFS proxy:', ipfsUri);
+    
+    // Use our server-side proxy API to avoid CORS issues
+    const response = await fetch(`/api/ipfs-proxy?cid=${encodeURIComponent(ipfsUri)}`);
+    
+    if (!response.ok) {
+      console.error(`Proxy API error: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to fetch metadata via proxy: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('Successfully fetched metadata via proxy');
+    
+    // Validate and ensure required fields
+    const metadata: TrackMetadata = {
+      name: data.name || 'Unknown Track',
+      symbol: data.symbol || 'TRACK',
+      description: data.description || '',
+      genre: data.genre || 'Unknown',
+      artist: data.artist || 'Unknown Artist',
+      artistAddress: data.artistAddress || '0x0000000000000000000000000000000000000000',
+      audio: data.audio || '',
+      image: data.image || '',
+      created_at: data.created_at || new Date().toISOString(),
+      ...data
+    };
+    
+    return metadata;
+  } catch (error) {
+    console.error('Error fetching metadata from IPFS via proxy:', error);
     throw new Error('Failed to fetch metadata from IPFS');
   }
 };

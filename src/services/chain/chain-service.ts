@@ -29,7 +29,7 @@ const chainConfig: Record<Chain, ChainConfig> = {
   solana: {
     name: 'Solana',
     url: 'http://localhost',
-    port: 3002,
+    port: 3099,
     enabled: true,
     description: 'High-performance blockchain using Metaplex'
   },

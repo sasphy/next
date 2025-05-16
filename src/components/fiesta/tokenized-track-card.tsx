@@ -118,7 +118,7 @@ const TokenizedTrackCard: React.FC<TokenizedTrackCardProps> = ({
         <div className={`${showChart ? 'md:w-1/3' : 'w-full'} relative`}>
           <div className={`track-image-container ${showChart ? 'aspect-square' : 'aspect-square'} relative overflow-hidden rounded-xl`}>
             <Image 
-              src={track.coverImage} 
+              src={track.coverImage || track.coverArt || '/fallback-images/track-cover.jpg'} 
               alt={track.title} 
               width={400}
               height={400}
@@ -148,7 +148,9 @@ const TokenizedTrackCard: React.FC<TokenizedTrackCardProps> = ({
             <Link href={`/tracks/${track.id}`} className="hover:underline">
               <h3 className="text-base md:text-lg font-semibold truncate">{track.title}</h3>
             </Link>
-            <p className="text-muted-foreground text-sm truncate">{track.artist}</p>
+            <p className="text-muted-foreground text-sm truncate">
+              {typeof track.artist === 'string' ? track.artist : track.artist.name}
+            </p>
             
             <div className="mt-2 space-y-2">
               <div className="flex justify-between items-center text-xs text-muted-foreground">

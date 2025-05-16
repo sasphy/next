@@ -26,9 +26,25 @@ export const SolanaWalletProvider: FC<SolanaWalletProviderProps> = ({
 }) => {
   // You can also provide a custom RPC endpoint
   const endpoint = useMemo(() => {
-    if (process.env.NEXT_PUBLIC_SOLANA_RPC) {
-      return process.env.NEXT_PUBLIC_SOLANA_RPC;
+    // Try client-side window.ENV first, then fallback to process.env
+    const customRpc = 
+      (typeof window !== 'undefined' && window.ENV?.SOLANA_RPC) || 
+      process.env.NEXT_PUBLIC_SOLANA_RPC;
+    
+    if (customRpc) {
+      return customRpc;
     }
+    
+    // Fallback to environment-specific RPC URLs
+    if (process.env.RPC_URL_SOLANA_DEVNET && network === WalletAdapterNetwork.Devnet) {
+      return process.env.RPC_URL_SOLANA_DEVNET;
+    }
+    
+    if (process.env.RPC_URL_SOLANA_MAINNET && network === WalletAdapterNetwork.Mainnet) {
+      return process.env.RPC_URL_SOLANA_MAINNET;
+    }
+    
+    // Final fallback to default Solana cluster API
     return clusterApiUrl(network);
   }, [network]);
 

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useSasphy } from '@/components/providers/sasphy-provider';
 import { Track } from '@/lib/types';
 import { toast } from 'sonner';
+import debugEnvironmentVariables from '@/lib/debug-env';
+import { reloadClientEnv } from '@/lib/reload-env';
 
 // Import Fiesta components
 import FiestaHero from '@/components/fiesta/fiesta-hero';
@@ -20,6 +22,15 @@ export default function HomePage() {
 
   // Fetch tracks on component mount
   useEffect(() => {
+    // Debug environment variables
+    const envDebugResult = debugEnvironmentVariables();
+    console.log('Environment variables debug result:', envDebugResult);
+    
+    // Reload client environment variables
+    if (typeof window !== 'undefined') {
+      reloadClientEnv();
+    }
+    
     const loadTracks = async () => {
       setIsLoading(true);
       try {
@@ -30,8 +41,8 @@ export default function HomePage() {
           const tokenized = allTracks.map(track => ({
             ...track,
             tokenized: true,
-            initialPrice: parseFloat(track.price) || 0.1,
-            currentPrice: parseFloat(track.price) * (1 + Math.random() * 0.5),
+            initialPrice: parseFloat(typeof track.price === 'string' ? track.price : '0.1') || 0.1,
+            currentPrice: parseFloat(typeof track.price === 'string' ? track.price : '0.1') * (1 + Math.random() * 0.5),
             totalSupply: Math.floor(Math.random() * 1000) + 100,
             holders: Math.floor(Math.random() * 100) + 10,
             bondingCurve: {

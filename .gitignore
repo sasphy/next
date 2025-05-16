@@ -40,3 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .cursor/
+
+notes/
+notes.md
+INTEGRATION_SUMMARY.md
