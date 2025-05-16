@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@radix-ui/react-slider';
+import { Slider } from '@/components/ui/slider';
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from 'lucide-react';
 import WaveSurfer from 'wavesurfer.js';
 

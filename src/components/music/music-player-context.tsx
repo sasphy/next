@@ -1,22 +1,16 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import { Track as TrackType } from '@/lib/types';
 
-export interface Track {
-  id: string;
-  title: string;
-  artist: string;
-  imageUrl: string;
-  audioUrl: string;
-  mintAddress?: string;
-}
+type Track = TrackType;
 
 interface MusicPlayerContextType {
   currentTrack: Track | null;
   isPlaying: boolean;
   currentTrackId: string | null;
   queue: Track[];
-  playTrack: (track: Track) => void;
+  playTrack: (track: Track, queueTracks?: Track[]) => void;
   pauseTrack: () => void;
   resumeTrack: () => void;
   nextTrack: () => void;
@@ -33,7 +27,12 @@ export const MusicPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [queue, setQueue] = useState<Track[]>([]);
 
-  const playTrack = useCallback((track: Track) => {
+  const playTrack = useCallback((track: Track, queueTracks?: Track[]) => {
+    // If queueTracks is provided, replace the current queue with these tracks
+    if (queueTracks) {
+      setQueue(queueTracks);
+    }
+    
     if (currentTrack?.id === track.id) {
       setIsPlaying(true);
     } else {
