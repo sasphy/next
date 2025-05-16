@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { sasphyApi } from '@/lib/blockchain-api';
-import { Track, TokenOwnership, User, PlaylistType } from '@/lib/types';
+import { Track, TokenOwnership, User, PlaylistType, Artist, Playlist, SearchResults } from '@/lib/types';
 import { toast } from 'sonner';
 
 interface CurrentlyPlaying {
