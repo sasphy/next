@@ -3,29 +3,28 @@
 import { useState, useEffect } from 'react';
 import { useSolanaWallet } from '@/hooks/use-solana-wallet';
 import { useMetaplex } from '@/hooks/use-metaplex';
-import { Track } from '@/lib/types';
-import { useMusicPlayer } from '@/components/music/music-player-context';
-import WalletConnectButton from '@/components/wallet/wallet-connect-button';
-import { toast } from 'sonner';
+import { Track as TrackType } from '@/lib/types';
 import { 
   Music, 
+  Grid, 
+  List as ListIcon, 
   Play, 
   Pause, 
-  PlusCircle, 
-  ExternalLink,
-  Download,
-  Share2, 
-  Heart,
-  MoreHorizontal,
-  PlayCircle,
-  Clock,
-  ListMusic
+  ExternalLink, 
+  Clock, 
+  Download
 } from 'lucide-react';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+import Link from 'next/link';
+import { useMusicPlayer } from '@/components/music/music-player-context';
+import WalletConnectButton from '@/components/wallet/wallet-connect-button';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { formatDuration, truncateAddress } from '@/lib/utils';
 
-// NFT to Track converter (same as in profile page)
-const nftToTrack = (nft: any): Track | null => {
+// Convert Metaplex NFT to Track object
+const nftToTrack = (nft: any): TrackType | null => {
   try {
     const metadata = nft.metadata;
     if (!metadata) return null;
@@ -43,9 +42,7 @@ const nftToTrack = (nft: any): Track | null => {
       coverImage: metadata.image || '',
       audioUrl: metadata.animation_url || '',
       mintAddress: nft.mintAddress || nft.mint?.toString() || nft.address?.toString(),
-      // Add other properties if available in metadata
       tags: metadata.attributes?.filter((attr: any) => attr.trait_type === 'Genre').map((attr: any) => attr.value) || [],
-      duration: 180, // Default duration if not specified
     };
   } catch (error) {
     console.error('Error converting NFT to Track:', error);
@@ -53,436 +50,469 @@ const nftToTrack = (nft: any): Track | null => {
   }
 };
 
-// Format duration in mm:ss format
-const formatDuration = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-};
-
-// Track Row component
-const TrackRow = ({ 
+// List View Row component
+const TrackListItem = ({ 
   track, 
   index, 
-  isPlaying, 
-  isCurrentTrack,
-  onPlay 
+  onPlay, 
+  isPlaying 
 }: { 
-  track: Track; 
-  index: number;
-  isPlaying: boolean;
-  isCurrentTrack: boolean;
-  onPlay: () => void;
+  track: TrackType; 
+  index: number; 
+  onPlay: () => void; 
+  isPlaying: boolean 
 }) => {
   return (
-    <motion.tr
-      className={`border-b border-gray-800 hover:bg-gray-900/50 ${isCurrentTrack ? 'bg-purple-900/20' : ''}`}
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      whileHover={{ backgroundColor: 'rgba(124, 58, 237, 0.1)' }}
+      className={`grid grid-cols-12 items-center gap-4 p-3 rounded-lg hover:bg-card/40 transition-colors ${
+        isPlaying ? 'bg-purple-900/20 border-l-2 border-purple-500' : ''
+      }`}
     >
-      <td className="px-4 py-3 w-12 text-center">
-        {isCurrentTrack ? (
-          <button 
-            onClick={onPlay}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white bg-purple-600"
+      <div className="col-span-6 md:col-span-5 flex items-center gap-3">
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onPlay();
+          }}
+          className="flex-shrink-0 w-10 h-10 bg-black/30 rounded-md flex items-center justify-center group"
+        >
+          {isPlaying ? (
+            <Pause size={18} className="text-purple-400" />
+          ) : (
+            <Play size={18} className="text-white group-hover:text-purple-400 transition-colors" />
+          )}
+        </button>
+        
+        <div className="min-w-0">
+          <h3 className="text-white font-medium text-sm truncate">{track.title}</h3>
+          <p className="text-purple-300 text-xs truncate">{track.artist}</p>
+        </div>
+      </div>
+      
+      <div className="col-span-3 md:col-span-2 hidden md:block">
+        <div className="flex flex-wrap gap-1">
+          {track.tags && track.tags.slice(0, 1).map((tag) => (
+            <span key={tag} className="text-xs bg-purple-900/40 text-purple-200 py-0.5 px-2 rounded-full truncate max-w-24">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+      
+      <div className="col-span-3 md:col-span-2 text-right md:text-left">
+        <span className="text-xs text-gray-300">
+          {track.releaseDate ? new Date(track.releaseDate).toLocaleDateString() : 'N/A'}
+        </span>
+      </div>
+      
+      <div className="col-span-3 md:col-span-2 text-right hidden md:block">
+        <span className="text-xs text-gray-300">
+          {track.duration ? formatDuration(track.duration) : 'N/A'}
+        </span>
+      </div>
+      
+      <div className="col-span-3 md:col-span-1 flex justify-end">
+        {track.mintAddress && (
+          <a
+            href={`https://solscan.io/token/${track.mintAddress}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-white transition-colors"
+            title="View on Solscan"
           >
-            {isPlaying ? <Pause size={14} /> : <Play size={14} className="ml-0.5" />}
-          </button>
-        ) : (
-          <button 
-            onClick={onPlay}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-purple-600 transition-colors"
-          >
-            <Play size={14} className="ml-0.5" />
-          </button>
+            <ExternalLink size={16} />
+          </a>
         )}
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded overflow-hidden bg-gray-800 flex-shrink-0">
-            {track.coverImage ? (
-              <img 
-                src={track.coverImage} 
-                alt={track.title} 
-                className="w-full h-full object-cover" 
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Music size={16} className="text-gray-500" />
-              </div>
-            )}
-          </div>
-          <div>
-            <div className={`font-medium ${isCurrentTrack ? 'text-purple-400' : 'text-white'}`}>
-              {track.title}
-            </div>
-            <div className="text-sm text-gray-400">{track.artist}</div>
-          </div>
-        </div>
-      </td>
-      <td className="px-4 py-3 text-sm text-gray-400">
-        {track.tags && track.tags.length > 0 ? track.tags.join(', ') : 'No genre'}
-      </td>
-      <td className="px-4 py-3 text-sm text-gray-400">
-        {track.duration ? formatDuration(track.duration) : '--:--'}
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-2">
-          <button 
-            className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-            title="Add to playlist"
-          >
-            <PlusCircle size={16} />
-          </button>
-          <button 
-            className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-            title="Like"
-          >
-            <Heart size={16} />
-          </button>
-          <button 
-            className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-            title="More options"
-          >
-            <MoreHorizontal size={16} />
-          </button>
-        </div>
-      </td>
-    </motion.tr>
+      </div>
+    </motion.div>
   );
 };
 
-// Empty State component
-const EmptyLibrary = () => (
-  <div className="text-center py-16 px-4">
-    <div className="bg-gray-900/60 rounded-xl p-8 max-w-md mx-auto border border-gray-800">
-      <ListMusic className="h-16 w-16 text-purple-500 mx-auto mb-4" />
-      <h2 className="text-xl font-bold text-white mb-2">Your library is empty</h2>
-      <p className="text-gray-400 mb-6">
-        Start building your collection by discovering and purchasing music NFTs on Solana.
-      </p>
-      <Link
-        href="/discover"
-        className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-5 py-2.5 transition-colors"
-      >
-        <PlayCircle size={18} />
-        Discover Music
-      </Link>
+// Grid View Card component
+const TrackGridItem = ({ 
+  track, 
+  index, 
+  onPlay, 
+  isPlaying 
+}: { 
+  track: TrackType; 
+  index: number; 
+  onPlay: () => void; 
+  isPlaying: boolean 
+}) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+      className="bg-black bg-opacity-40 rounded-xl overflow-hidden border border-purple-900/20 hover:border-purple-500/40 transition-all hover:shadow-lg hover:shadow-purple-900/20"
+    >
+      <div className="relative aspect-square overflow-hidden">
+        {track.coverImage ? (
+          <img 
+            src={track.coverImage} 
+            alt={track.title} 
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-purple-900/50 to-indigo-900/50 flex items-center justify-center">
+            <Music size={48} className="text-purple-300" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black opacity-80" />
+        
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onPlay();
+          }}
+          className="absolute inset-0 w-full h-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+        >
+          <div className="bg-purple-600 rounded-full p-3 transform hover:scale-110 transition-transform shadow-lg">
+            {isPlaying ? (
+              <Pause size={24} className="text-white" />
+            ) : (
+              <Play size={24} className="text-white ml-1" />
+            )}
+          </div>
+        </button>
+        
+        {isPlaying && (
+          <div className="absolute top-2 right-2 bg-purple-600 rounded-full p-1">
+            <span className="flex gap-0.5 items-center">
+              <span className="block w-1 h-3 bg-white rounded-full animate-music-bar-1"></span>
+              <span className="block w-1 h-5 bg-white rounded-full animate-music-bar-2"></span>
+              <span className="block w-1 h-2 bg-white rounded-full animate-music-bar-3"></span>
+            </span>
+          </div>
+        )}
+      </div>
+      
+      <div className="p-4">
+        <h3 className="text-white font-semibold truncate">{track.title}</h3>
+        <p className="text-purple-300 text-sm truncate">{track.artist}</p>
+        
+        <div className="mt-3 flex flex-wrap gap-1">
+          {track.tags && track.tags.slice(0, 2).map((tag) => (
+            <span key={tag} className="text-xs bg-purple-900/40 text-purple-200 py-0.5 px-2 rounded-full">
+              {tag}
+            </span>
+          ))}
+        </div>
+        
+        <div className="mt-3 flex justify-between items-center">
+          <div className="text-xs text-gray-400 flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {track.duration ? formatDuration(track.duration) : 'N/A'}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {track.mintAddress && (
+              <a
+                href={`https://solscan.io/token/${track.mintAddress}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+                title="View on Solscan"
+              >
+                <ExternalLink size={16} />
+              </a>
+            )}
+            
+            {track.audioUrl && (
+              <a
+                href={track.audioUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+                title="Download"
+              >
+                <Download size={16} />
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// Empty Library component
+const EmptyLibrary = ({ connected }: { connected: boolean }) => (
+  <div className="bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl p-10 text-center">
+    <div className="w-16 h-16 bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+      <Music size={32} className="text-purple-400" />
     </div>
+    <h3 className="text-xl font-semibold text-white mb-2">
+      {connected ? 'Your library is empty' : 'Connect your wallet'}
+    </h3>
+    <p className="text-gray-400 mb-6">
+      {connected
+        ? 'Start collecting music to build your library'
+        : 'Connect your wallet to view your music collection'}
+    </p>
+    
+    {connected ? (
+      <Link href="/discover">
+        <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition-colors">
+          Discover Music
+        </Button>
+      </Link>
+    ) : (
+      <WalletConnectButton />
+    )}
   </div>
 );
 
-// Library Page
+// Main Library Page
 const LibraryPage = () => {
-  const { connected, walletAddress } = useSolanaWallet();
+  const { connected } = useSolanaWallet();
   const { isReady, fetchNFTsByOwner } = useMetaplex();
-  const { playTrack, currentTrack, isPlaying, pauseTrack, resumeTrack } = useMusicPlayer();
+  const { playTrack, currentTrack, isPlaying } = useMusicPlayer();
   
-  const [ownedTracks, setOwnedTracks] = useState<Track[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [tracks, setTracks] = useState<TrackType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeTab, setActiveTab] = useState('library');
   
-  // Fetch owned tracks
+  // Load the user's music collection
   useEffect(() => {
-    const loadOwnedTracks = async () => {
-      if (!connected || !isReady || !walletAddress) return;
+    const loadCollection = async () => {
+      if (!connected || !isReady) {
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       try {
-        // Fetch NFTs owned by the connected wallet
+        // Fetch NFTs owned by the user
         const nfts = await fetchNFTsByOwner();
-        console.log('Fetched NFTs:', nfts);
         
-        // Convert NFTs to Tracks
-        const tracks = nfts
+        // Convert NFTs to Track format
+        const musicTracks = nfts
           .map(nftToTrack)
-          .filter(Boolean) as Track[];
+          .filter(Boolean) as TrackType[];
         
-        // If no tracks are found from NFTs, use dummy data for development purposes
-        if (tracks.length === 0) {
-          // This is just for development - in production, we would show the empty state
-          toast.info('Using sample music data for demonstration');
-          
-          setOwnedTracks([
-            {
-              id: '1',
-              title: 'Digital Dreams',
-              artist: 'CryptoBeats',
-              coverImage: '/assets/album-1.jpg',
-              audioUrl: '/assets/audio-1.mp3',
-              duration: 210,
-              tags: ['Electronic', 'Ambient'],
-              mintAddress: '7KqpRwzkkeweW5jQuq21SS3FYVARpLdwTKcUQKMW9PhQ'
-            },
-            {
-              id: '2',
-              title: 'Blockchain Beats',
-              artist: 'SOL Serenade',
-              coverImage: '/assets/album-2.jpg',
-              audioUrl: '/assets/audio-2.mp3',
-              duration: 180,
-              tags: ['Trap', 'Hip-Hop'],
-              mintAddress: '9KqpRwzkkeweW5jQrr21SS3FYVARpLdwTKcUQKMW9PhS'
-            },
-            {
-              id: '3',
-              title: 'Solana Sunset',
-              artist: 'Chain Harmony',
-              coverImage: '/assets/album-3.jpg',
-              audioUrl: '/assets/audio-3.mp3',
-              duration: 240,
-              tags: ['Lo-Fi', 'Chill'],
-              mintAddress: '5KqpRwzkkeweW5jQfg21SS3FYVARpLdwTKcUQKMW9PhF'
-            }
-          ]);
-        } else {
-          setOwnedTracks(tracks);
-        }
+        setTracks(musicTracks);
       } catch (error) {
-        console.error('Error loading owned tracks:', error);
-        toast.error('Failed to load your music library');
-        
-        // Fallback to empty state
-        setOwnedTracks([]);
+        console.error('Error loading music collection:', error);
+        toast.error('Failed to load your music collection');
       } finally {
         setIsLoading(false);
       }
     };
     
-    loadOwnedTracks();
-  }, [connected, isReady, walletAddress, fetchNFTsByOwner]);
+    loadCollection();
+  }, [connected, isReady, fetchNFTsByOwner]);
   
-  // Play/pause track
-  const handleTrackAction = (track: Track) => {
-    if (currentTrack?.id === track.id) {
-      // Toggle play/pause for current track
-      if (isPlaying) {
-        pauseTrack();
-      } else {
-        resumeTrack();
-      }
-    } else {
-      // Play new track
-      playTrack(track);
-    }
+  // Function to handle track play
+  const handlePlayTrack = (track: TrackType) => {
+    playTrack(track, tracks);
   };
   
-  // Play all tracks
-  const playAllTracks = () => {
-    if (ownedTracks.length > 0) {
-      playTrack(ownedTracks[0], ownedTracks);
-      toast.success('Playing all tracks');
-    } else {
-      toast.error('No tracks to play');
+  // Mock data for development
+  const mockTracks: TrackType[] = [
+    {
+      id: '1',
+      title: 'Solana Sunset',
+      artist: 'Chain Harmony',
+      coverImage: '/assets/album-1.jpg',
+      audioUrl: '/assets/audio-sample.mp3',
+      mintAddress: '7KqpRwzkkeweW5jQuq21SS3FYVARpLdwTKcUQKMW9PhQ',
+      duration: 210,
+      releaseDate: '2025-04-10',
+      tags: ['Lo-Fi', 'Chill']
+    },
+    {
+      id: '2',
+      title: 'Blockchain Beats',
+      artist: 'SOL Serenade',
+      coverImage: '/assets/album-2.jpg',
+      audioUrl: '/assets/audio-sample2.mp3',
+      mintAddress: '9KqpRwzkkeweW5jQrr21SS3FYVARpLdwTKcUQKMW9PhS',
+      duration: 180,
+      releaseDate: '2025-03-22',
+      tags: ['Hip-Hop', 'Bass']
+    },
+    {
+      id: '3',
+      title: 'Decentralized Disco',
+      artist: 'CryptoBeats',
+      coverImage: '/assets/album-3.jpg',
+      audioUrl: '/assets/audio-sample3.mp3',
+      mintAddress: '5KqpRwzkkeweW5jQfg21SS3FYVARpLdwTKcUQKMW9PhF',
+      duration: 195,
+      releaseDate: '2025-04-05',
+      tags: ['Disco', 'Electronic']
     }
-  };
-  
-  // If wallet is not connected, show connect prompt
-  if (!connected) {
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-8 max-w-md mx-auto text-center">
-          <Music className="h-16 w-16 text-purple-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-4">Your Music Library</h1>
-          <p className="text-gray-400 mb-6">Connect your Solana wallet to access your music collection.</p>
-          <WalletConnectButton />
-        </div>
-      </div>
-    );
-  }
+  ];
+
+  // Use mock data for development
+  const displayTracks = tracks.length > 0 ? tracks : mockTracks;
   
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Your Music Library</h1>
-          <p className="text-purple-300">Listen to your owned music NFTs</p>
+    <div className="min-h-screen pb-16">
+      <div className="bg-gradient-to-b from-purple-900/20 to-transparent py-8 mb-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl md:text-4xl font-bold text-white">
+            My <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-400">Library</span>
+          </h1>
+          <p className="text-purple-300 mt-2">
+            Your collected music on Solana
+          </p>
         </div>
-        
-        {ownedTracks.length > 0 && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={playAllTracks}
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-4 py-2 transition-colors"
-            >
-              <Play size={16} />
-              Play All
-            </button>
-            
-            <div className="flex items-center bg-gray-900 rounded-lg border border-gray-800">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 ${viewMode === 'list' ? 'text-purple-400' : 'text-gray-400 hover:text-white'}`}
-                title="List view"
-              >
-                <ListMusic size={18} />
-              </button>
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 ${viewMode === 'grid' ? 'text-purple-400' : 'text-gray-400 hover:text-white'}`}
-                title="Grid view"
-              >
-                <div className="flex flex-wrap w-4 h-4">
-                  <div className={`w-1.5 h-1.5 m-0.5 rounded-sm ${viewMode === 'grid' ? 'bg-purple-400' : 'bg-gray-400'}`}></div>
-                  <div className={`w-1.5 h-1.5 m-0.5 rounded-sm ${viewMode === 'grid' ? 'bg-purple-400' : 'bg-gray-400'}`}></div>
-                  <div className={`w-1.5 h-1.5 m-0.5 rounded-sm ${viewMode === 'grid' ? 'bg-purple-400' : 'bg-gray-400'}`}></div>
-                  <div className={`w-1.5 h-1.5 m-0.5 rounded-sm ${viewMode === 'grid' ? 'bg-purple-400' : 'bg-gray-400'}`}></div>
-                </div>
-              </button>
-            </div>
-          </div>
-        )}
       </div>
       
-      {isLoading ? (
-        <div className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-6">
-          <div className="animate-pulse space-y-4">
-            {[...Array(3)].map((_, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-800"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-800 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-800 rounded w-1/2"></div>
+      <div className="container mx-auto px-4">
+        {!connected ? (
+          <EmptyLibrary connected={false} />
+        ) : isLoading ? (
+          // Loading skeleton
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, index) => (
+              <div key={index} className="bg-gray-900 rounded-xl overflow-hidden animate-pulse">
+                <div className="aspect-square bg-gray-800" />
+                <div className="p-4">
+                  <div className="h-5 bg-gray-800 rounded mb-2" />
+                  <div className="h-4 bg-gray-800 rounded w-2/3 mb-4" />
+                  <div className="h-3 bg-gray-800 rounded-full w-20 mb-4" />
+                  <div className="flex justify-between">
+                    <div className="h-3 bg-gray-800 rounded w-12" />
+                    <div className="h-3 bg-gray-800 rounded w-8" />
+                  </div>
                 </div>
-                <div className="w-12 h-4 bg-gray-800 rounded"></div>
-                <div className="w-16 h-8 bg-gray-800 rounded"></div>
               </div>
             ))}
           </div>
-        </div>
-      ) : ownedTracks.length > 0 ? (
-        <div className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 overflow-hidden">
-          {viewMode === 'list' ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="bg-gray-900/80 border-b border-gray-800">
-                    <th className="px-4 py-3 w-12 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      #
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Track
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Genre
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center">
-                      <Clock size={12} className="mr-1" /> Duration
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ownedTracks.map((track, index) => (
-                    <TrackRow
+        ) : displayTracks.length === 0 ? (
+          <EmptyLibrary connected={true} />
+        ) : (
+          <div>
+            <div className="bg-gradient-to-r from-gray-900 to-black border border-purple-900/20 rounded-xl p-5 mb-8 backdrop-blur-md">
+              <div className="flex flex-col sm:flex-row justify-between gap-4 items-center">
+                <Tabs
+                  defaultValue="library"
+                  value={activeTab}
+                  onValueChange={setActiveTab}
+                  className="w-full sm:w-auto"
+                >
+                  <TabsList className="w-full sm:w-auto gap-1 bg-gray-900/50">
+                    <TabsTrigger value="library" className="flex-1 sm:flex-none">
+                      All Music
+                    </TabsTrigger>
+                    <TabsTrigger value="collections" className="flex-1 sm:flex-none">
+                      Collections
+                    </TabsTrigger>
+                    <TabsTrigger value="playlists" className="flex-1 sm:flex-none">
+                      Playlists
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-gray-400">
+                    {displayTracks.length} {displayTracks.length === 1 ? 'track' : 'tracks'}
+                  </div>
+                  
+                  <div className="flex items-center gap-1 p-1 bg-gray-900/50 rounded-md">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`rounded p-1.5 ${
+                        viewMode === 'grid' 
+                          ? 'bg-purple-600 text-white' 
+                          : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                      }`}
+                    >
+                      <Grid size={16} />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`rounded p-1.5 ${
+                        viewMode === 'list' 
+                          ? 'bg-purple-600 text-white' 
+                          : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                      }`}
+                    >
+                      <ListIcon size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <TabsContent value="library" className="outline-none pt-2">
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {displayTracks.map((track, index) => (
+                    <TrackGridItem
                       key={track.id}
                       track={track}
                       index={index}
-                      isCurrentTrack={currentTrack?.id === track.id}
-                      isPlaying={isPlaying && currentTrack?.id === track.id}
-                      onPlay={() => handleTrackAction(track)}
+                      onPlay={() => handlePlayTrack(track)}
+                      isPlaying={currentTrack?.id === track.id && isPlaying}
                     />
                   ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 p-6">
-              {ownedTracks.map((track, index) => (
-                <motion.div
-                  key={track.id}
-                  className="group relative rounded-lg overflow-hidden"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  whileHover={{ y: -5 }}
-                >
-                  <div className="aspect-square bg-gray-800 relative overflow-hidden">
-                    {track.coverImage ? (
-                      <img 
-                        src={track.coverImage} 
-                        alt={track.title} 
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Music size={32} className="text-gray-500" />
-                      </div>
-                    )}
-                    
-                    {/* Play button overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <button
-                        onClick={() => handleTrackAction(track)}
-                        className="bg-purple-600 rounded-full p-3 transform scale-75 group-hover:scale-100 transition-all shadow-lg shadow-purple-900/30"
-                      >
-                        {currentTrack?.id === track.id && isPlaying ? (
-                          <Pause size={20} className="text-white" />
-                        ) : (
-                          <Play size={20} className="text-white ml-0.5" />
-                        )}
-                      </button>
-                    </div>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-r from-gray-900 to-black border border-purple-900/20 rounded-xl overflow-hidden">
+                  <div className="grid grid-cols-12 gap-4 p-3 text-gray-400 text-xs font-medium">
+                    <div className="col-span-6 md:col-span-5">TRACK</div>
+                    <div className="col-span-3 md:col-span-2 hidden md:block">GENRE</div>
+                    <div className="col-span-3 md:col-span-2 text-right md:text-left">DATE ADDED</div>
+                    <div className="col-span-3 md:col-span-2 text-right hidden md:block">DURATION</div>
+                    <div className="col-span-3 md:col-span-1"></div>
                   </div>
                   
-                  <div className="mt-3">
-                    <h3 className="text-white font-medium truncate">{track.title}</h3>
-                    <p className="text-gray-400 text-sm truncate">{track.artist}</p>
+                  <div className="divide-y divide-gray-800">
+                    {displayTracks.map((track, index) => (
+                      <TrackListItem
+                        key={track.id}
+                        track={track}
+                        index={index}
+                        onPlay={() => handlePlayTrack(track)}
+                        isPlaying={currentTrack?.id === track.id && isPlaying}
+                      />
+                    ))}
                   </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
-      ) : (
-        <EmptyLibrary />
-      )}
-      
-      {/* NFT Information Section */}
-      {ownedTracks.length > 0 && (
-        <div className="mt-8 bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">About Your Music NFTs</h2>
-          <div className="text-gray-400 space-y-4">
-            <p>
-              Your music is stored as NFTs on the Solana blockchain, giving you true ownership of your collection. 
-              Each track can be played, transferred, or sold on compatible marketplaces.
-            </p>
-            <div className="flex flex-col md:flex-row gap-4">
-              <a 
-                href="https://explorer.solana.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors"
-              >
-                <ExternalLink size={16} />
-                View on Solana Explorer
-              </a>
-              <a 
-                href="https://magiceden.io/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors"
-              >
-                <ExternalLink size={16} />
-                List on Magic Eden
-              </a>
-              <a 
-                href="https://solsea.io/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors"
-              >
-                <ExternalLink size={16} />
-                List on Solsea
-              </a>
-            </div>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="collections" className="outline-none pt-2">
+              <div className="bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl p-10 text-center">
+                <div className="w-16 h-16 bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Music size={32} className="text-purple-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  Collections Coming Soon
+                </h3>
+                <p className="text-gray-400 mb-6">
+                  Artist collections will be available in the next update
+                </p>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="playlists" className="outline-none pt-2">
+              <div className="bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl p-10 text-center">
+                <div className="w-16 h-16 bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Music size={32} className="text-purple-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  Playlists Coming Soon
+                </h3>
+                <p className="text-gray-400 mb-6">
+                  Create and share playlists in the next update
+                </p>
+              </div>
+            </TabsContent>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

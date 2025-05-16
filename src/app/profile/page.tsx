@@ -3,487 +3,572 @@
 import { useState, useEffect } from 'react';
 import { useSolanaWallet } from '@/hooks/use-solana-wallet';
 import { useMetaplex } from '@/hooks/use-metaplex';
-import { Track } from '@/lib/types';
-import WalletConnectButton from '@/components/wallet/wallet-connect-button';
-import { useMusicPlayer } from '@/components/music/music-player-context';
+import { Track as TrackType, User } from '@/lib/types';
+import { 
+  Music, 
+  Trophy, 
+  Copy, 
+  ExternalLink, 
+  BarChart2, 
+  Play, 
+  Clock, 
+  Heart, 
+  Star,
+  Disc,
+  TrendingUp,
+  Activity
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { truncateAddress } from '@/lib/utils';
 import Link from 'next/link';
-import { Copy, ExternalLink, Music, CollectionIcon, Trophy, UserCircle, Headphones } from 'lucide-react';
-import { NFT } from '@metaplex-foundation/js';
+import { useMusicPlayer } from '@/components/music/music-player-context';
+import WalletConnectButton from '@/components/wallet/wallet-connect-button';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { formatDuration, truncateAddress } from '@/lib/utils';
 
-// CollectionIcon component
-function CollectionIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 2H2v10h10V2z" />
-      <path d="M12 12h10v10H12V12z" />
-      <path d="M22 2h-6.5a3.5 3.5 0 0 0-3.5 3.5V9" />
-      <path d="M15 12V9" />
-      <path d="M2 15h8.5a3.5 3.5 0 0 1 3.5 3.5V22" />
-      <path d="M9 2v7" />
-      <path d="M15 22v-7" />
-    </svg>
-  )
-}
-
-// NFT to Track converter
-const nftToTrack = (nft: any): Track | null => {
-  try {
-    const metadata = nft.metadata;
-    if (!metadata) return null;
-
-    // Filter out non-music NFTs
-    if (!metadata.animation_url && (!metadata.properties?.category || metadata.properties.category !== 'audio')) {
-      return null;
-    }
-
-    return {
-      id: nft.mintAddress || nft.mint?.toString() || nft.address?.toString(),
-      title: metadata.name || 'Untitled Track',
-      artist: metadata.attributes?.find((attr: any) => attr.trait_type === 'Artist')?.value || 'Unknown Artist',
-      description: metadata.description || '',
-      coverImage: metadata.image || '',
-      audioUrl: metadata.animation_url || '',
-      mintAddress: nft.mintAddress || nft.mint?.toString() || nft.address?.toString(),
-      // Add other properties if available in metadata
-      tags: metadata.attributes?.filter((attr: any) => attr.trait_type === 'Genre').map((attr: any) => attr.value) || [],
-    };
-  } catch (error) {
-    console.error('Error converting NFT to Track:', error);
-    return null;
+// Placeholder badge data
+const badgesData = [
+  { 
+    id: 'early_adopter', 
+    name: 'Early Adopter', 
+    icon: Star, 
+    description: 'Joined during the platform launch period', 
+    rarity: 'common', 
+    dateEarned: '2025-04-01'
+  },
+  { 
+    id: 'trend_spotter', 
+    name: 'Trend Spotter', 
+    icon: TrendingUp, 
+    description: 'Discovered 5 tracks before they became trending', 
+    rarity: 'rare', 
+    dateEarned: '2025-04-10'
+  },
+  { 
+    id: 'music_enthusiast', 
+    name: 'Music Enthusiast', 
+    icon: Disc, 
+    description: 'Collected more than 10 unique tracks', 
+    rarity: 'uncommon', 
+    dateEarned: '2025-04-05'
   }
+];
+
+// Badge component
+const Badge = ({ 
+  name, 
+  icon: Icon, 
+  description, 
+  rarity 
+}: { 
+  name: string; 
+  icon: any; 
+  description: string; 
+  rarity: 'common' | 'uncommon' | 'rare' | 'legendary' 
+}) => {
+  const rarityColor = {
+    common: 'from-blue-500 to-blue-700',
+    uncommon: 'from-green-500 to-green-700',
+    rare: 'from-purple-500 to-purple-700',
+    legendary: 'from-yellow-500 to-yellow-700',
+  }[rarity];
+  
+  return (
+    <div className="bg-black bg-opacity-40 rounded-xl overflow-hidden border border-purple-900/20 p-4">
+      <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${rarityColor} flex items-center justify-center mb-3`}>
+        <Icon className="text-white" size={24} />
+      </div>
+      <h3 className="text-white font-semibold mb-1">{name}</h3>
+      <p className="text-gray-400 text-sm">{description}</p>
+      <div className="mt-2">
+        <span className={`text-xs capitalize px-2 py-0.5 rounded-full ${
+          rarity === 'common' ? 'bg-blue-900/30 text-blue-300' :
+          rarity === 'uncommon' ? 'bg-green-900/30 text-green-300' :
+          rarity === 'rare' ? 'bg-purple-900/30 text-purple-300' :
+          'bg-yellow-900/30 text-yellow-300'
+        }`}>
+          {rarity}
+        </span>
+      </div>
+    </div>
+  );
 };
 
-// Stat Card component
-const StatCard = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | number }) => (
-  <div className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-4">
-    <div className="flex items-center gap-3 mb-2">
-      <div className="bg-purple-900/30 p-2 rounded-lg">
-        <Icon className="h-5 w-5 text-purple-400" />
+// Stats component
+const StatsCard = ({ 
+  title, 
+  value, 
+  icon: Icon, 
+  trend,
+  color = 'purple'
+}: { 
+  title: string; 
+  value: string | number; 
+  icon: any; 
+  trend?: number;
+  color?: 'purple' | 'blue' | 'green' | 'yellow' 
+}) => {
+  const colorClass = {
+    purple: 'from-purple-500/20 to-purple-700/20 border-purple-500/30',
+    blue: 'from-blue-500/20 to-blue-700/20 border-blue-500/30',
+    green: 'from-green-500/20 to-green-700/20 border-green-500/30',
+    yellow: 'from-yellow-500/20 to-yellow-700/20 border-yellow-500/30',
+  }[color];
+  
+  return (
+    <div className={`bg-gradient-to-br ${colorClass} rounded-xl border p-4`}>
+      <div className="flex justify-between items-start mb-2">
+        <h3 className="text-gray-300 text-sm">{title}</h3>
+        <Icon className={`text-${color}-400`} size={20} />
       </div>
-      <span className="text-gray-400 text-sm">{label}</span>
+      <div className="flex items-end justify-between">
+        <div className="text-xl font-bold text-white">{value}</div>
+        {trend !== undefined && (
+          <div className={`text-xs flex items-center ${
+            trend > 0 ? 'text-green-400' : 
+            trend < 0 ? 'text-red-400' : 'text-gray-400'
+          }`}>
+            {trend > 0 ? (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                +{trend}%
+              </>
+            ) : trend < 0 ? (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"></polyline><polyline points="16 17 22 17 22 11"></polyline></svg>
+                {trend}%
+              </>
+            ) : (
+              <>—</>
+            )}
+          </div>
+        )}
+      </div>
     </div>
-    <div className="text-2xl font-bold text-white">{value}</div>
-  </div>
-);
+  );
+};
 
-// Track Item component
-const TrackItem = ({ track, onClick }: { track: Track; onClick: () => void }) => (
-  <motion.div 
-    className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-lg border border-purple-900/20 hover:border-purple-500/40 transition-all p-3 flex items-center gap-4"
-    whileHover={{ x: 5 }}
-  >
-    <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
-      {track.coverImage ? (
-        <img
-          src={track.coverImage}
-          alt={track.title}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <div className="w-full h-full bg-purple-900/30 flex items-center justify-center">
-          <Music className="h-6 w-6 text-purple-300" />
-        </div>
-      )}
-    </div>
-    
-    <div className="flex-grow min-w-0">
-      <h3 className="text-white font-medium truncate">{track.title}</h3>
-      <p className="text-purple-300 text-sm truncate">{track.artist}</p>
-    </div>
-    
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onClick();
-      }}
-      className="p-2 rounded-full hover:bg-purple-900/30 transition-colors flex-shrink-0"
-    >
-      <Headphones className="h-5 w-5 text-purple-400" />
-    </button>
-  </motion.div>
-);
+// Mock user data
+const mockUser: User = {
+  id: 'user1',
+  address: '7KqpRwzkkeweW5jQuq21SS3FYVARpLdwTKcUQKMW9PhQ',
+  username: 'SolanaFan',
+  profileImage: 'https://avatars.githubusercontent.com/u/35608259',
+  evScore: 583,
+  discoveryCount: 27,
+  followers: 12,
+  following: 34,
+  influenceScore: 583,
+  badges: ['early_adopter', 'trend_spotter', 'music_enthusiast'],
+  totalPlays: 347
+};
 
-// Empty State component
-const EmptyState = ({ title, description, icon: Icon }: { title: string; description: string; icon: React.ElementType }) => (
-  <div className="bg-gray-900 bg-opacity-50 rounded-xl p-8 text-center">
-    <Icon className="h-12 w-12 text-purple-500 mx-auto mb-4" />
-    <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
-    <p className="text-gray-400 mb-6">{description}</p>
-    <Link
-      href="/discover"
-      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition-colors"
-    >
-      Discover Music
-    </Link>
-  </div>
-);
-
-// Profile Page
+// Main Profile Page
 const ProfilePage = () => {
-  const { walletAddress, connected } = useSolanaWallet();
-  const { isReady, fetchNFTsByOwner } = useMetaplex();
-  const { playTrack } = useMusicPlayer();
+  const { connected, walletAddress } = useSolanaWallet();
+  const { isReady } = useMetaplex();
+  const { playTrack, currentTrack, isPlaying } = useMusicPlayer();
   
-  const [ownedTracks, setOwnedTracks] = useState<Track[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'collection' | 'influence'>('collection');
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('collection');
   
-  // Stats data (placeholder for now)
-  const stats = {
-    ownedTracks: ownedTracks.length,
-    discoveredTracks: 12,
-    influenceScore: 876,
-    trendsSpotted: 5
-  };
-
-  // Load owned tracks on component mount or when wallet connects
+  // Load user profile data
   useEffect(() => {
-    const loadOwnedTracks = async () => {
-      if (!connected || !isReady || !walletAddress) return;
+    const loadUserProfile = async () => {
+      if (!connected || !isReady) {
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       try {
-        // Fetch NFTs owned by the connected wallet
-        const nfts = await fetchNFTsByOwner();
-        console.log('Fetched NFTs:', nfts);
-        
-        // Convert NFTs to Tracks
-        const tracks = nfts
-          .map(nftToTrack)
-          .filter(Boolean) as Track[];
-        
-        setOwnedTracks(tracks);
+        // In a real implementation, fetch user profile from API
+        // For now, use mock data
+        setUser(mockUser);
       } catch (error) {
-        console.error('Error loading owned tracks:', error);
-        toast.error('Failed to load your music collection');
+        console.error('Error loading user profile:', error);
+        toast.error('Failed to load profile data');
       } finally {
         setIsLoading(false);
       }
     };
     
-    loadOwnedTracks();
-  }, [connected, isReady, walletAddress, fetchNFTsByOwner]);
-  
-  // Handle track play
-  const handlePlayTrack = (track: Track) => {
-    playTrack(track);
-    toast.success(`Playing "${track.title}"`);
-  };
+    loadUserProfile();
+  }, [connected, isReady]);
   
   // Copy wallet address to clipboard
-  const copyAddress = () => {
+  const copyWalletAddress = () => {
     if (!walletAddress) return;
     
     navigator.clipboard.writeText(walletAddress.toString());
     toast.success('Wallet address copied to clipboard');
   };
   
-  // If wallet is not connected, show connect prompt
+  // If not connected, show connect wallet UI
   if (!connected) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-8 max-w-md mx-auto text-center">
-          <UserCircle className="h-16 w-16 text-purple-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-4">Connect your wallet</h1>
-          <p className="text-gray-400 mb-6">Connect your Solana wallet to view your profile, music collection, and influence score.</p>
-          <WalletConnectButton />
+      <div className="min-h-screen pb-16">
+        <div className="bg-gradient-to-b from-purple-900/20 to-transparent py-8 mb-8">
+          <div className="container mx-auto px-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-white">
+              Profile
+            </h1>
+            <p className="text-purple-300 mt-2">
+              Connect wallet to view your profile
+            </p>
+          </div>
+        </div>
+        
+        <div className="container mx-auto px-4">
+          <div className="bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl p-10 text-center">
+            <div className="w-16 h-16 bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Music size={32} className="text-purple-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">
+              Connect your wallet
+            </h3>
+            <p className="text-gray-400 mb-6">
+              Connect your wallet to view your profile, collection, and stats
+            </p>
+            
+            <WalletConnectButton />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pb-16">
+        <div className="bg-gradient-to-b from-purple-900/20 to-transparent py-8 mb-8">
+          <div className="container mx-auto px-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-white">
+              Profile
+            </h1>
+            <p className="text-purple-300 mt-2">
+              Loading your profile...
+            </p>
+          </div>
+        </div>
+        
+        <div className="container mx-auto px-4">
+          <div className="bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl p-8 animate-pulse">
+            <div className="flex flex-col md:flex-row gap-8">
+              <div className="md:w-1/3">
+                <div className="rounded-full w-24 h-24 bg-gray-800 mb-4" />
+                <div className="h-6 bg-gray-800 rounded w-1/2 mb-2" />
+                <div className="h-4 bg-gray-800 rounded w-3/4 mb-4" />
+              </div>
+              
+              <div className="md:w-2/3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="bg-gray-800 rounded-xl p-4 h-24" />
+                  ))}
+                </div>
+                
+                <div className="h-10 bg-gray-800 rounded mb-4" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-gray-800 rounded-xl p-4 h-40" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Profile Header */}
-      <div className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 backdrop-blur-md rounded-xl border border-purple-900/20 p-6 mb-8">
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-          {/* Profile Avatar */}
-          <div className="w-24 h-24 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
-            {walletAddress?.toString().substring(0, 1).toUpperCase()}
-          </div>
-          
-          <div className="flex-grow">
-            <div className="flex flex-col md:flex-row justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-white mb-2 text-center md:text-left">
-                  Solana Collector
-                </h1>
-                <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                  <p className="text-gray-300 font-mono text-sm">
-                    {truncateAddress(walletAddress?.toString() || '')}
-                  </p>
+    <div className="min-h-screen pb-16">
+      <div className="bg-gradient-to-b from-purple-900/20 to-transparent py-8 mb-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl md:text-4xl font-bold text-white">
+            My <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-400">Profile</span>
+          </h1>
+          <p className="text-purple-300 mt-2">
+            View your collection, influence, and stats
+          </p>
+        </div>
+      </div>
+      
+      <div className="container mx-auto px-4">
+        <div className="bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl p-6 md:p-8">
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* Profile Sidebar */}
+            <div className="md:w-1/3">
+              <div className="flex flex-col items-center md:items-start">
+                {user?.profileImage ? (
+                  <img 
+                    src={user.profileImage} 
+                    alt={user.username || 'Profile'} 
+                    className="w-24 h-24 rounded-full object-cover border-2 border-purple-500"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-700 to-indigo-700 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-white">
+                      {user?.username?.charAt(0) || walletAddress?.toString().charAt(0) || '?'}
+                    </span>
+                  </div>
+                )}
+                
+                <h2 className="text-xl font-bold text-white mt-4">
+                  {user?.username || 'Unnamed User'}
+                </h2>
+                
+                <div className="flex items-center gap-2 mt-2 bg-black/30 rounded-lg px-3 py-1.5">
+                  <span className="text-sm text-gray-300 font-mono">
+                    {walletAddress ? truncateAddress(walletAddress.toString()) : ''}
+                  </span>
                   <button 
-                    onClick={copyAddress}
-                    className="text-purple-400 hover:text-purple-300 transition-colors"
-                    title="Copy address"
+                    onClick={copyWalletAddress}
+                    className="text-gray-400 hover:text-white transition-colors"
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy size={14} />
                   </button>
                   <a
-                    href={`https://solscan.io/account/${walletAddress?.toString()}`}
+                    href={`https://solscan.io/account/${walletAddress}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-purple-400 hover:text-purple-300 transition-colors"
-                    title="View on Solscan"
+                    className="text-gray-400 hover:text-white transition-colors"
                   >
-                    <ExternalLink className="h-4 w-4" />
+                    <ExternalLink size={14} />
                   </a>
                 </div>
-              </div>
-              
-              <div className="flex flex-col items-center md:items-end">
-                <div className="px-3 py-1 bg-purple-600/30 rounded-full text-purple-300 text-sm font-medium mb-2">
-                  Trend Spotter
-                </div>
-                <div className="flex items-center gap-1 text-yellow-500">
-                  <Trophy className="h-4 w-4" />
-                  <span className="text-sm font-medium">Top 10% Influencer</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-              <StatCard icon={Music} label="Owned Tracks" value={stats.ownedTracks} />
-              <StatCard icon={Headphones} label="Discovered" value={stats.discoveredTracks} />
-              <StatCard icon={Trophy} label="Influence Score" value={stats.influenceScore} />
-              <StatCard icon={TrendingUpIcon} label="Trends Spotted" value={stats.trendsSpotted} />
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Tabs */}
-      <div className="flex border-b border-gray-800 mb-6">
-        <button
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'collection'
-              ? 'text-purple-400 border-b-2 border-purple-500'
-              : 'text-gray-400 hover:text-gray-300'
-          }`}
-          onClick={() => setActiveTab('collection')}
-        >
-          Collection
-        </button>
-        <button
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'influence'
-              ? 'text-purple-400 border-b-2 border-purple-500'
-              : 'text-gray-400 hover:text-gray-300'
-          }`}
-          onClick={() => setActiveTab('influence')}
-        >
-          Influence & Rewards
-        </button>
-      </div>
-      
-      {/* Tab Content */}
-      {activeTab === 'collection' ? (
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-white">Your Music Collection</h2>
-            <Link
-              href="/discover"
-              className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
-            >
-              Discover More
-            </Link>
-          </div>
-          
-          {isLoading ? (
-            <div className="space-y-3">
-              {[...Array(4)].map((_, index) => (
-                <div key={index} className="bg-gray-900 bg-opacity-60 rounded-lg p-3 flex items-center gap-4 animate-pulse">
-                  <div className="w-12 h-12 bg-purple-900/30 rounded-md"></div>
-                  <div className="flex-grow">
-                    <div className="h-5 bg-gray-800 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-800 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : ownedTracks.length > 0 ? (
-            <div className="space-y-3">
-              {ownedTracks.map((track) => (
-                <TrackItem
-                  key={track.id}
-                  track={track}
-                  onClick={() => handlePlayTrack(track)}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              icon={CollectionIcon}
-              title="Your collection is empty"
-              description="Start discovering and collecting music to build your collection."
-            />
-          )}
-        </div>
-      ) : (
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-white">Your Influence</h2>
-            <span className="text-sm px-3 py-1 bg-purple-600/30 rounded-full text-purple-300 font-medium">
-              Level 3
-            </span>
-          </div>
-          
-          {/* Influence Score */}
-          <div className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-6 mb-6">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-1">Influence Score</h3>
-                <p className="text-gray-400 mb-4 text-sm">Your impact on the sasphy music ecosystem</p>
-              </div>
-              <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
-                {stats.influenceScore}
-              </div>
-            </div>
-            
-            {/* Progress bar */}
-            <div className="mt-6">
-              <div className="flex justify-between text-sm text-gray-400 mb-2">
-                <span>Current: Level 3</span>
-                <span>Next: Level 4 (1,000)</span>
-              </div>
-              <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
-                  style={{ width: `${Math.min((stats.influenceScore / 1000) * 100, 100)}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Achievement Cards */}
-          <h3 className="text-lg font-semibold text-white mb-3">Your Achievements</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            {[
-              {
-                title: "Early Adopter",
-                description: "You were one of the first 1,000 users on sasphy",
-                icon: Trophy,
-                date: "Apr 3, 2025"
-              },
-              {
-                title: "Trend Spotter",
-                description: "You discovered a track before it reached 1,000 plays",
-                icon: TrendingUpIcon,
-                date: "Apr 10, 2025"
-              },
-              {
-                title: "Collector Initiate",
-                description: "Own 5 or more music NFTs",
-                icon: CollectionIcon,
-                date: "Apr 15, 2025"
-              }
-            ].map((achievement, index) => (
-              <div 
-                key={index}
-                className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-4 hover:border-purple-500/40 transition-all"
-              >
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="bg-purple-900/30 p-2 rounded-lg mt-1">
-                    <achievement.icon className="h-5 w-5 text-purple-400" />
-                  </div>
+                
+                <div className="flex items-center gap-4 mt-6 text-center w-full md:w-auto">
                   <div>
-                    <h4 className="text-white font-medium">{achievement.title}</h4>
-                    <p className="text-gray-400 text-sm">{achievement.description}</p>
+                    <div className="text-purple-400 font-bold">{user?.followers || 0}</div>
+                    <div className="text-gray-400 text-sm">Followers</div>
+                  </div>
+                  <div className="h-10 border-r border-gray-700" />
+                  <div>
+                    <div className="text-purple-400 font-bold">{user?.following || 0}</div>
+                    <div className="text-gray-400 text-sm">Following</div>
+                  </div>
+                  <div className="h-10 border-r border-gray-700" />
+                  <div>
+                    <div className="text-purple-400 font-bold">{user?.totalPlays || 0}</div>
+                    <div className="text-gray-400 text-sm">Plays</div>
                   </div>
                 </div>
-                <div className="text-right text-xs text-gray-500">
-                  Earned on {achievement.date}
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {/* Tracks You Discovered */}
-          <h3 className="text-lg font-semibold text-white mb-3">Tracks You Discovered Early</h3>
-          {stats.trendsSpotted > 0 ? (
-            <div className="space-y-3">
-              {/* This would be real data in a complete implementation */}
-              {[...Array(stats.trendsSpotted)].map((_, index) => (
-                <div 
-                  key={index}
-                  className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-lg border border-purple-900/20 p-3 flex items-center gap-4"
-                >
-                  <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
-                    <img
-                      src={`/assets/album-${index + 1}.jpg`}
-                      alt="Track cover"
-                      className="w-full h-full object-cover"
+                
+                <div className="w-full mt-6 p-4 bg-black/30 rounded-xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-white font-semibold flex items-center gap-2">
+                      <Trophy className="h-4 w-4 text-purple-400" />
+                      Influence Score
+                    </h3>
+                    <span className="text-xs text-gray-400">Rank #142</span>
+                  </div>
+                  
+                  <div className="relative h-3 bg-gray-800 rounded-full overflow-hidden mb-2">
+                    <div 
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
+                      style={{ width: `${Math.min(100, (user?.influenceScore || 0) / 10)}%` }}
                     />
                   </div>
                   
-                  <div className="flex-grow min-w-0">
-                    <h4 className="text-white font-medium truncate">
-                      {["Cosmic Harmony", "Digital Dreams", "Blockchain Beats", "Solana Sunset", "Crypto Carnival"][index % 5]}
-                    </h4>
-                    <p className="text-purple-300 text-sm truncate">
-                      {["Nebula Noise", "CryptoBeats", "Chain Harmony", "SOL Serenade", "Token Titans"][index % 5]}
-                    </p>
-                  </div>
-                  
-                  <div className="flex-shrink-0 text-right">
-                    <div className="px-2 py-1 bg-purple-600/30 rounded-full text-purple-300 text-xs font-medium mb-1">
-                      +{[45, 32, 58, 27, 63][index % 5]} Influence
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      Discovered {["2", "5", "3", "4", "1"][index % 5]} days before trending
-                    </div>
+                  <div className="flex justify-between text-xs text-gray-400">
+                    <span>{user?.influenceScore || 0} points</span>
+                    <span>+{12} this week</span>
                   </div>
                 </div>
-              ))}
+                
+                <Button className="w-full mt-6 border border-purple-500/50 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20">
+                  Edit Profile
+                </Button>
+              </div>
             </div>
-          ) : (
-            <EmptyState
-              icon={TrendingUpIcon}
-              title="No trends spotted yet"
-              description="Discover new music before others to earn influence points and rewards."
-            />
-          )}
+            
+            {/* Main Content */}
+            <div className="md:w-2/3">
+              {/* Stats cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <StatsCard
+                  title="Tracks Owned"
+                  value="12"
+                  icon={Music}
+                  color="purple"
+                />
+                <StatsCard
+                  title="Discoveries"
+                  value={user?.discoveryCount || 0}
+                  icon={Star}
+                  trend={8}
+                  color="blue"
+                />
+                <StatsCard
+                  title="Influence Score"
+                  value={user?.influenceScore || 0}
+                  icon={BarChart2}
+                  trend={5}
+                  color="green"
+                />
+                <StatsCard
+                  title="Total Plays"
+                  value={user?.totalPlays || 0}
+                  icon={Activity}
+                  color="yellow"
+                />
+              </div>
+              
+              {/* Tabs */}
+              <Tabs
+                defaultValue="collection"
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <TabsList className="w-full mb-6 bg-gray-900/50">
+                  <TabsTrigger value="collection" className="flex-1">
+                    Collection
+                  </TabsTrigger>
+                  <TabsTrigger value="badges" className="flex-1">
+                    Badges & Achievements
+                  </TabsTrigger>
+                  <TabsTrigger value="influence" className="flex-1">
+                    Influence History
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="collection" className="outline-none">
+                  <div className="bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl p-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-white">My Collection</h3>
+                      <Link href="/library">
+                        <Button variant="outline" size="sm">
+                          View All
+                        </Button>
+                      </Link>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {/* For development, show placeholder collection */}
+                      {[1, 2, 3].map((id) => (
+                        <div 
+                          key={id}
+                          className="bg-black bg-opacity-40 rounded-xl overflow-hidden border border-purple-900/20 hover:border-purple-500/40 transition-all hover:shadow-lg hover:shadow-purple-900/20"
+                        >
+                          <div className="relative aspect-square overflow-hidden">
+                            <img 
+                              src={`/assets/album-${id}.jpg`}
+                              alt={`Track ${id}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black opacity-80" />
+                            
+                            <button
+                              className="absolute inset-0 w-full h-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                            >
+                              <div className="bg-purple-600 rounded-full p-3 transform hover:scale-110 transition-transform shadow-lg">
+                                <Play size={24} className="text-white ml-1" />
+                              </div>
+                            </button>
+                          </div>
+                          
+                          <div className="p-4">
+                            <h3 className="text-white font-semibold truncate">
+                              {id === 1 ? 'Solana Sunset' : id === 2 ? 'Blockchain Beats' : 'Digital Dreams'}
+                            </h3>
+                            <p className="text-purple-300 text-sm truncate">
+                              {id === 1 ? 'Chain Harmony' : id === 2 ? 'SOL Serenade' : 'CryptoBeats'}
+                            </p>
+                            
+                            <div className="mt-3 flex justify-between items-center">
+                              <div className="text-xs text-gray-400 flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {id === 1 ? '3:30' : id === 2 ? '2:45' : '4:10'}
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Heart size={14} className="text-purple-400" />
+                                <span className="text-xs text-gray-400">
+                                  {id === 1 ? '42' : id === 2 ? '27' : '36'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="badges" className="outline-none">
+                  <div className="bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">Badges & Achievements</h3>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {badgesData.map((badge) => (
+                        <Badge
+                          key={badge.id}
+                          name={badge.name}
+                          icon={badge.icon}
+                          description={badge.description}
+                          rarity={badge.rarity as 'common' | 'uncommon' | 'rare' | 'legendary'}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="influence" className="outline-none">
+                  <div className="bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">Influence History</h3>
+                    
+                    <div className="space-y-4">
+                      {/* Activity timeline */}
+                      <div className="relative pl-8 pb-4 border-l border-gray-800">
+                        <div className="absolute -left-2 top-0 w-5 h-5 rounded-full bg-purple-600"></div>
+                        <div className="mb-1 text-sm text-gray-400">April 15, 2025</div>
+                        <div className="text-white font-medium">Early Discovery Reward</div>
+                        <p className="text-sm text-gray-300">
+                          +50 points for discovering "Blockchain Beats" before it reached 100 plays
+                        </p>
+                      </div>
+                      
+                      <div className="relative pl-8 pb-4 border-l border-gray-800">
+                        <div className="absolute -left-2 top-0 w-5 h-5 rounded-full bg-blue-600"></div>
+                        <div className="mb-1 text-sm text-gray-400">April 12, 2025</div>
+                        <div className="text-white font-medium">Trend Spotter Badge Earned</div>
+                        <p className="text-sm text-gray-300">
+                          +200 points for discovering 5 tracks before they became trending
+                        </p>
+                      </div>
+                      
+                      <div className="relative pl-8 pb-4">
+                        <div className="absolute -left-2 top-0 w-5 h-5 rounded-full bg-green-600"></div>
+                        <div className="mb-1 text-sm text-gray-400">April 10, 2025</div>
+                        <div className="text-white font-medium">Ownership Bonus</div>
+                        <p className="text-sm text-gray-300">
+                          +30 points for owning "Digital Dreams" that has been played by 100+ users
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-6 text-center">
+                      <Link href="/leaderboard">
+                        <Button>
+                          View Influence Leaderboard
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
-
-// TrendingUp Icon component
-function TrendingUpIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-      <polyline points="16 7 22 7 22 13" />
-    </svg>
-  )
-}
 
 export default ProfilePage;

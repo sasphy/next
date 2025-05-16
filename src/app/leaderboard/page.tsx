@@ -2,503 +2,597 @@
 
 import { useState, useEffect } from 'react';
 import { useSolanaWallet } from '@/hooks/use-solana-wallet';
-import { Trophy, TrendingUp, Search, Users, Headphones, Badge, Crown, Zap, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { User } from '@/lib/types';
+import { 
+  Trophy, 
+  Medal, 
+  Crown, 
+  Star, 
+  TrendingUp, 
+  ChevronUp, 
+  ChevronDown, 
+  ChevronsRight
+} from 'lucide-react';
 import { motion } from 'framer-motion';
-import { truncateAddress } from '@/lib/utils';
 import { toast } from 'sonner';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { truncateAddress } from '@/lib/utils';
 
-// Fake data for development
-const DUMMY_LEADERBOARD = Array.from({ length: 100 }, (_, i) => ({
-  id: `user-${i + 1}`,
-  walletAddress: `${Array(44).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`,
-  username: [
-    'CryptoBeats', 'SolSerenade', 'VibeVault', 'SoundWave', 'TokenTracker',
-    'MelodyMiner', 'ChainChord', 'DecentralizedDJ', 'NFTunes', 'BlockBeat',
-    'SolanaSound', 'MusicalMinter', 'RhythmRing', 'TuneToken', 'SymphonicSOL'
-  ][Math.floor(Math.random() * 15)],
-  rank: i + 1,
-  score: Math.floor(Math.random() * 5000) + 500,
-  previousRank: Math.min(100, Math.max(1, i + 1 + Math.floor(Math.random() * 7) - 3)),
-  level: Math.floor(Math.random() * 10) + 1,
-  tracksDiscovered: Math.floor(Math.random() * 100) + 1,
-  trendsSpotted: Math.floor(Math.random() * 20),
-  badges: Math.floor(Math.random() * 10)
-})).sort((a, b) => b.score - a.score);
+// Mock leaderboard data
+const mockLeaderboard: User[] = [
+  {
+    id: 'user1',
+    address: '7KqpRwzkkeweW5jQuq21SS3FYVARpLdwTKcUQKMW9PhQ',
+    username: 'CryptoBeats',
+    profileImage: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde',
+    influenceScore: 1247,
+    discoveryCount: 102,
+    badges: ['legendary_curator', 'trend_spotter'],
+    totalPlays: 856
+  },
+  {
+    id: 'user2',
+    address: '9KqpRwzkkeweW5jQrr21SS3FYVARpLdwTKcUQKMW9PhS',
+    username: 'SolanaFan',
+    profileImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
+    influenceScore: 968,
+    discoveryCount: 87,
+    badges: ['early_adopter', 'social_butterfly'],
+    totalPlays: 723
+  },
+  {
+    id: 'user3',
+    address: '5KqpRwzkkeweW5jQfg21SS3FYVARpLdwTKcUQKMW9PhF',
+    username: 'MusicVibes',
+    profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e',
+    influenceScore: 831,
+    discoveryCount: 72,
+    badges: ['trend_spotter', 'music_enthusiast'],
+    totalPlays: 614
+  },
+  {
+    id: 'user4',
+    address: '3KqpRwzkkeweW5jQhj21SS3FYVARpLdwTKcUQKMW9PhD',
+    username: 'BlockchainBeats',
+    profileImage: 'https://images.unsplash.com/photo-1607746882042-944635dfe10e',
+    influenceScore: 743,
+    discoveryCount: 59,
+    badges: ['music_enthusiast'],
+    totalPlays: 512
+  },
+  {
+    id: 'user5',
+    address: '2KqpRwzkkeweW5jQty21SS3FYVARpLdwTKcUQKMW9PhL',
+    username: 'SonicExplorer',
+    profileImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80',
+    influenceScore: 692,
+    discoveryCount: 51,
+    badges: ['early_adopter'],
+    totalPlays: 487
+  },
+  {
+    id: 'user6',
+    address: '8KqpRwzkkeweW5jQmn21SS3FYVARpLdwTKcUQKMW9PhM',
+    username: 'MelodyMaster',
+    profileImage: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12',
+    influenceScore: 584,
+    discoveryCount: 43,
+    badges: ['music_enthusiast'],
+    totalPlays: 376
+  },
+  {
+    id: 'user7',
+    address: '4KqpRwzkkeweW5jQkl21SS3FYVARpLdwTKcUQKMW9PhX',
+    username: 'CryptoCollector',
+    profileImage: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d',
+    influenceScore: 467,
+    discoveryCount: 37,
+    badges: ['early_adopter'],
+    totalPlays: 298
+  },
+  {
+    id: 'user8',
+    address: '6KqpRwzkkeweW5jQop21SS3FYVARpLdwTKcUQKMW9PhK',
+    username: 'SoundSurfer',
+    profileImage: 'https://images.unsplash.com/photo-1607990281513-2c110a25bd8c',
+    influenceScore: 352,
+    discoveryCount: 28,
+    badges: ['trend_spotter'],
+    totalPlays: 243
+  },
+  {
+    id: 'user9',
+    address: '1KqpRwzkkeweW5jQab21SS3FYVARpLdwTKcUQKMW9PhW',
+    username: 'RhythmRider',
+    profileImage: 'https://images.unsplash.com/photo-1580489944761-15a19d654956',
+    influenceScore: 291,
+    discoveryCount: 22,
+    badges: ['music_enthusiast'],
+    totalPlays: 187
+  },
+  {
+    id: 'user10',
+    address: '0KqpRwzkkeweW5jQzx21SS3FYVARpLdwTKcUQKMW9PhV',
+    username: 'BeatBooster',
+    profileImage: 'https://images.unsplash.com/photo-1628157588553-5eeea00af15c',
+    influenceScore: 203,
+    discoveryCount: 18,
+    badges: ['early_adopter'],
+    totalPlays: 149
+  }
+];
 
-// Add rank based on sorted order
-DUMMY_LEADERBOARD.forEach((user, index) => {
-  user.rank = index + 1;
-});
-
-// User info interface
-interface LeaderboardUser {
-  id: string;
-  walletAddress: string;
-  username: string;
-  rank: number;
-  score: number;
-  previousRank: number;
-  level: number;
-  tracksDiscovered: number;
-  trendsSpotted: number;
-  badges: number;
-}
-
-// Badge component
-const BadgeComponent = ({ type }: { type: string }) => {
-  const badgeColors: Record<string, { bg: string, text: string }> = {
-    'gold': { bg: 'bg-yellow-500', text: 'text-yellow-200' },
-    'silver': { bg: 'bg-gray-400', text: 'text-gray-100' },
-    'bronze': { bg: 'bg-amber-700', text: 'text-amber-100' },
-    'pioneer': { bg: 'bg-purple-600', text: 'text-purple-200' },
-    'trendsetter': { bg: 'bg-blue-600', text: 'text-blue-200' },
-    'curator': { bg: 'bg-green-600', text: 'text-green-200' },
-  };
+// Top 3 user cards
+const TopUserCard = ({ 
+  user, 
+  rank 
+}: { 
+  user: User; 
+  rank: 1 | 2 | 3; 
+}) => {
+  const color = rank === 1 
+    ? 'from-yellow-600 to-yellow-400' 
+    : rank === 2 
+      ? 'from-gray-500 to-gray-300' 
+      : 'from-amber-700 to-amber-500';
   
-  const colors = badgeColors[type] || { bg: 'bg-gray-700', text: 'text-gray-300' };
+  const size = rank === 1 ? 'h-full' : 'h-[90%]';
+  const icon = rank === 1 
+    ? <Crown className="text-yellow-300" size={24} /> 
+    : rank === 2 
+      ? <Medal className="text-gray-300" size={24} /> 
+      : <Medal className="text-amber-500" size={24} />;
   
   return (
-    <div className={`px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} text-xs font-semibold`}>
-      {type.charAt(0).toUpperCase() + type.slice(1)}
-    </div>
+    <motion.div 
+      className={`${size} bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl overflow-hidden relative`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: (rank - 1) * 0.1 }}
+    >
+      {/* Rank badge */}
+      <div className={`absolute top-4 left-4 w-8 h-8 rounded-full bg-gradient-to-r ${color} flex items-center justify-center shadow-lg`}>
+        <span className="text-white font-bold">{rank}</span>
+      </div>
+      
+      {/* Trophy icon */}
+      <div className="absolute top-4 right-4">
+        {icon}
+      </div>
+      
+      <div className="p-6 flex flex-col items-center h-full">
+        {/* Profile image */}
+        <div className="relative">
+          <div className={`w-20 h-20 rounded-full border-2 border-${rank === 1 ? 'yellow' : rank === 2 ? 'gray' : 'amber'}-500 overflow-hidden`}>
+            {user.profileImage ? (
+              <img 
+                src={user.profileImage} 
+                alt={user.username || 'User'} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-purple-700 to-indigo-700 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">
+                  {user.username?.charAt(0) || user.address.charAt(0)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Username */}
+        <h3 className="text-white font-bold mt-4 text-lg">
+          {user.username || truncateAddress(user.address)}
+        </h3>
+        
+        {/* Influence score */}
+        <div className="mt-2 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-full px-4 py-1 text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
+          {user.influenceScore} points
+        </div>
+        
+        {/* Stats */}
+        <div className="mt-4 flex items-center gap-4 text-gray-300 text-sm">
+          <div className="flex items-center gap-1">
+            <Star size={14} className="text-purple-400" />
+            <span>{user.discoveryCount} discoveries</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <TrendingUp size={14} className="text-purple-400" />
+            <span>{user.totalPlays} plays</span>
+          </div>
+        </div>
+        
+        {/* Badges */}
+        {user.badges && user.badges.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2 justify-center">
+            {user.badges.map((badge) => (
+              <span 
+                key={badge} 
+                className="bg-purple-900/40 text-purple-200 py-0.5 px-2 rounded-full text-xs"
+              >
+                {badge.replace(/_/g, ' ')}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
   );
 };
 
-// Rank change component
-const RankChange = ({ current, previous }: { current: number; previous: number }) => {
-  const diff = previous - current;
-  
-  if (diff > 0) {
-    return (
-      <div className="flex items-center gap-1 text-green-500">
-        <ArrowUp size={14} />
-        <span className="text-xs">{diff}</span>
-      </div>
-    );
-  } else if (diff < 0) {
-    return (
-      <div className="flex items-center gap-1 text-red-500">
-        <ArrowDown size={14} />
-        <span className="text-xs">{Math.abs(diff)}</span>
-      </div>
-    );
-  } else {
-    return (
-      <div className="flex items-center gap-1 text-gray-500">
-        <Minus size={14} />
-      </div>
-    );
-  }
-};
-
-// Leaderboard row component
+// Leaderboard table row
 const LeaderboardRow = ({ 
   user, 
+  rank, 
+  change, 
   isCurrentUser 
 }: { 
-  user: LeaderboardUser; 
-  isCurrentUser: boolean;
+  user: User; 
+  rank: number; 
+  change?: number;
+  isCurrentUser?: boolean;
 }) => {
   return (
-    <motion.tr
-      className={`border-b border-gray-800 ${isCurrentUser ? 'bg-purple-900/20' : 'hover:bg-gray-900/50'}`}
+    <motion.tr 
+      className={`${
+        isCurrentUser 
+          ? 'bg-purple-900/20 border border-purple-500/40' 
+          : 'hover:bg-card/30'
+      } transition-colors`}
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      whileHover={{ backgroundColor: isCurrentUser ? 'rgba(124, 58, 237, 0.2)' : 'rgba(17, 24, 39, 0.5)' }}
+      transition={{ duration: 0.3, delay: rank * 0.03 }}
     >
-      <td className="px-4 py-4 text-center">
-        <div className="flex justify-center items-center">
-          {user.rank <= 3 ? (
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              user.rank === 1 
-                ? 'bg-yellow-500/20 text-yellow-500' 
-                : user.rank === 2 
-                  ? 'bg-gray-400/20 text-gray-400' 
-                  : 'bg-amber-700/20 text-amber-700'
-            }`}>
-              <Crown size={16} />
-            </div>
-          ) : (
-            <div className="text-gray-400 font-medium">{user.rank}</div>
-          )}
-        </div>
+      {/* Rank */}
+      <td className="px-4 py-3 text-center">
+        <span className="text-gray-300">{rank}</span>
       </td>
-      <td className="px-4 py-4">
+      
+      {/* User */}
+      <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${
-            user.rank === 1 
-              ? 'bg-gradient-to-br from-yellow-500 to-yellow-600' 
-              : user.rank === 2 
-                ? 'bg-gradient-to-br from-gray-400 to-gray-500' 
-                : user.rank === 3 
-                  ? 'bg-gradient-to-br from-amber-700 to-amber-800' 
-                  : 'bg-gradient-to-br from-purple-600 to-indigo-600'
-          }`}>
-            {user.username.charAt(0).toUpperCase()}
+          <div className="w-8 h-8 rounded-full overflow-hidden">
+            {user.profileImage ? (
+              <img 
+                src={user.profileImage} 
+                alt={user.username || 'User'} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-purple-700 to-indigo-700 flex items-center justify-center">
+                <span className="text-xs font-bold text-white">
+                  {user.username?.charAt(0) || user.address.charAt(0)}
+                </span>
+              </div>
+            )}
           </div>
+          
           <div>
-            <div className={`font-medium ${isCurrentUser ? 'text-purple-400' : 'text-white'}`}>
-              {user.username}
+            <div className="text-white font-medium">
+              {user.username || truncateAddress(user.address)}
             </div>
-            <div className="text-xs text-gray-400">{truncateAddress(user.walletAddress)}</div>
+            <div className="text-gray-400 text-xs">
+              {truncateAddress(user.address)}
+            </div>
           </div>
         </div>
       </td>
-      <td className="px-4 py-4 text-center">
-        <div className="text-gray-300">{user.level}</div>
+      
+      {/* Score */}
+      <td className="px-4 py-3 text-right">
+        <span className="text-white font-semibold">{user.influenceScore}</span>
       </td>
-      <td className="px-4 py-4">
-        <div className="flex items-center gap-2">
-          <div className="text-lg font-semibold text-white">{user.score.toLocaleString()}</div>
-          <RankChange current={user.rank} previous={user.previousRank} />
-        </div>
+      
+      {/* Discoveries */}
+      <td className="px-4 py-3 text-center hidden md:table-cell">
+        <span className="text-gray-300">{user.discoveryCount}</span>
       </td>
-      <td className="px-4 py-4 text-center">
-        <div className="text-gray-300">{user.tracksDiscovered}</div>
+      
+      {/* Change */}
+      <td className="px-4 py-3 text-right hidden md:table-cell">
+        {change !== undefined && (
+          <div className={`inline-flex items-center gap-1 ${
+            change > 0 
+              ? 'text-green-400' 
+              : change < 0 
+                ? 'text-red-400' 
+                : 'text-gray-400'
+          }`}>
+            {change > 0 ? (
+              <>
+                <ChevronUp size={16} />
+                <span>{change}</span>
+              </>
+            ) : change < 0 ? (
+              <>
+                <ChevronDown size={16} />
+                <span>{Math.abs(change)}</span>
+              </>
+            ) : (
+              <>
+                <ChevronsRight size={16} />
+                <span>0</span>
+              </>
+            )}
+          </div>
+        )}
       </td>
-      <td className="px-4 py-4 text-center">
-        <div className="text-gray-300">{user.trendsSpotted}</div>
-      </td>
-      <td className="px-4 py-4">
-        <div className="flex flex-wrap gap-1">
-          {user.badges > 0 && user.rank <= 10 && <BadgeComponent type="gold" />}
-          {user.badges > 1 && user.rank <= 50 && <BadgeComponent type="silver" />}
-          {user.badges > 2 && <BadgeComponent type="bronze" />}
-          {user.badges > 3 && <BadgeComponent type="pioneer" />}
-          {user.badges > 5 && <BadgeComponent type="trendsetter" />}
-          {user.badges > 7 && <BadgeComponent type="curator" />}
-        </div>
+      
+      {/* Action */}
+      <td className="px-4 py-3 text-center">
+        <Link href={`/profile`}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs"
+          >
+            View
+          </Button>
+        </Link>
       </td>
     </motion.tr>
   );
 };
 
-// Leaderboard Page
+// Filter Periods
+type PeriodFilter = 'all' | 'monthly' | 'weekly' | 'daily';
+
+// Main Leaderboard Page
 const LeaderboardPage = () => {
   const { connected, walletAddress } = useSolanaWallet();
   
-  const [users, setUsers] = useState<LeaderboardUser[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<LeaderboardUser[]>([]);
+  const [leaderboard, setLeaderboard] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [timeRange, setTimeRange] = useState<'weekly' | 'monthly' | 'allTime'>('weekly');
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
   const [currentUserRank, setCurrentUserRank] = useState<number | null>(null);
   
-  // Load leaderboard data
+  // Fetch leaderboard data
   useEffect(() => {
-    const loadLeaderboard = async () => {
+    const fetchLeaderboard = async () => {
       setIsLoading(true);
       try {
-        // In a real implementation, we would fetch this from an API
-        // For now, use dummy data
-        const data = DUMMY_LEADERBOARD;
+        // In a real implementation, fetch from API based on the period filter
+        // For now, use mock data
         
-        // For demonstration - make the connected wallet be in the leaderboard
-        if (connected && walletAddress) {
-          const randomPosition = Math.floor(Math.random() * 20) + 5; // Position 5-25
-          const userIndex = data.findIndex(u => u.rank === randomPosition);
-          
-          if (userIndex >= 0) {
-            data[userIndex].walletAddress = walletAddress.toString();
-            setCurrentUserRank(randomPosition);
-          }
+        // Simulating different data for different periods
+        let data = [...mockLeaderboard];
+        
+        if (periodFilter === 'monthly') {
+          // Shuffle a bit for monthly
+          data = data.map(user => ({
+            ...user,
+            influenceScore: Math.floor(user.influenceScore * 0.7)
+          })).sort((a, b) => b.influenceScore - a.influenceScore);
+        } else if (periodFilter === 'weekly') {
+          // More shuffling for weekly
+          data = data.map(user => ({
+            ...user,
+            influenceScore: Math.floor(user.influenceScore * 0.4)
+          })).sort((a, b) => b.influenceScore - a.influenceScore);
+        } else if (periodFilter === 'daily') {
+          // Even more shuffling for daily
+          data = data.map(user => ({
+            ...user,
+            influenceScore: Math.floor(user.influenceScore * 0.2)
+          })).sort((a, b) => b.influenceScore - a.influenceScore);
         }
         
-        setUsers(data);
-        setFilteredUsers(data);
+        setLeaderboard(data);
+        
+        // Find current user's rank if connected
+        if (connected && walletAddress) {
+          const userAddress = walletAddress.toString();
+          const userIndex = data.findIndex(user => user.address === userAddress);
+          if (userIndex !== -1) {
+            setCurrentUserRank(userIndex + 1);
+          } else {
+            setCurrentUserRank(null);
+          }
+        }
       } catch (error) {
-        console.error('Error loading leaderboard:', error);
-        toast.error('Failed to load leaderboard data');
+        console.error('Error fetching leaderboard:', error);
+        toast.error('Failed to load leaderboard');
       } finally {
         setIsLoading(false);
       }
     };
     
-    loadLeaderboard();
-  }, [connected, walletAddress]);
+    fetchLeaderboard();
+  }, [connected, walletAddress, periodFilter]);
   
-  // Filter users based on search query
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredUsers(users);
-      return;
-    }
-    
-    const query = searchQuery.toLowerCase();
-    const filtered = users.filter(user => 
-      user.username.toLowerCase().includes(query) || 
-      user.walletAddress.toLowerCase().includes(query)
-    );
-    
-    setFilteredUsers(filtered);
-  }, [searchQuery, users]);
-  
-  // Generate stats based on current users
-  const stats = {
-    totalUsers: users.length,
-    topScore: users.length > 0 ? users[0].score : 0,
-    avgScore: users.length > 0 
-      ? Math.floor(users.reduce((sum, user) => sum + user.score, 0) / users.length) 
-      : 0,
-    totalTrendsSpotted: users.reduce((sum, user) => sum + user.trendsSpotted, 0)
+  // Filter handler
+  const handleFilterChange = (period: PeriodFilter) => {
+    setPeriodFilter(period);
   };
   
+  // Random changes for UI demonstration
+  const getRandomChange = (index: number): number => {
+    const changes = [2, -1, 0, 3, -2, 1, 0, -3, 4, -1];
+    return changes[index % changes.length];
+  };
+  
+  const top3 = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
+  
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Influence Leaderboard</h1>
-          <p className="text-purple-300">Top music trendsetters on sasphy</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="flex bg-gray-900 rounded-lg border border-gray-800">
-            <button
-              onClick={() => setTimeRange('weekly')}
-              className={`px-3 py-1.5 text-sm font-medium ${
-                timeRange === 'weekly'
-                  ? 'bg-purple-600 text-white rounded-lg'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Weekly
-            </button>
-            <button
-              onClick={() => setTimeRange('monthly')}
-              className={`px-3 py-1.5 text-sm font-medium ${
-                timeRange === 'monthly'
-                  ? 'bg-purple-600 text-white rounded-lg'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setTimeRange('allTime')}
-              className={`px-3 py-1.5 text-sm font-medium ${
-                timeRange === 'allTime'
-                  ? 'bg-purple-600 text-white rounded-lg'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              All Time
-            </button>
-          </div>
+    <div className="min-h-screen pb-16">
+      <div className="bg-gradient-to-b from-purple-900/20 to-transparent py-8 mb-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl md:text-4xl font-bold text-white">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-400">Influence</span> Leaderboard
+          </h1>
+          <p className="text-purple-300 mt-2">
+            Discover the most influential users on sasphy
+          </p>
         </div>
       </div>
       
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-purple-900/30 p-2 rounded-lg">
-              <Users className="h-5 w-5 text-purple-400" />
-            </div>
-            <span className="text-gray-400 text-sm">Total Participants</span>
-          </div>
-          <div className="text-2xl font-bold text-white">{stats.totalUsers.toLocaleString()}</div>
-        </div>
-        
-        <div className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-purple-900/30 p-2 rounded-lg">
-              <Trophy className="h-5 w-5 text-purple-400" />
-            </div>
-            <span className="text-gray-400 text-sm">Top Score</span>
-          </div>
-          <div className="text-2xl font-bold text-white">{stats.topScore.toLocaleString()}</div>
-        </div>
-        
-        <div className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-purple-900/30 p-2 rounded-lg">
-              <Zap className="h-5 w-5 text-purple-400" />
-            </div>
-            <span className="text-gray-400 text-sm">Average Score</span>
-          </div>
-          <div className="text-2xl font-bold text-white">{stats.avgScore.toLocaleString()}</div>
-        </div>
-        
-        <div className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-purple-900/30 p-2 rounded-lg">
-              <TrendingUp className="h-5 w-5 text-purple-400" />
-            </div>
-            <span className="text-gray-400 text-sm">Trends Spotted</span>
-          </div>
-          <div className="text-2xl font-bold text-white">{stats.totalTrendsSpotted.toLocaleString()}</div>
-        </div>
-      </div>
-      
-      {/* Current User Card - show only if connected and found in leaderboard */}
-      {connected && currentUserRank !== null && (
-        <div className="bg-purple-900/20 backdrop-blur-md rounded-xl border border-purple-500/30 p-4 mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-purple-600/20 p-2 rounded-full">
-                <Crown className="h-6 w-6 text-purple-400" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">Your Current Rank</h3>
-                <p className="text-purple-300 text-sm">
-                  {timeRange === 'weekly' ? 'This Week' : timeRange === 'monthly' ? 'This Month' : 'All Time'}
-                </p>
-              </div>
-            </div>
+      <div className="container mx-auto px-4">
+        {/* Filters */}
+        <div className="bg-gradient-to-r from-gray-900 to-black border border-purple-900/20 rounded-xl p-5 mb-8 backdrop-blur-md">
+          <div className="flex flex-col sm:flex-row justify-between gap-4 items-center">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              <Trophy className="h-6 w-6 text-purple-400" />
+              Top Influencers
+            </h2>
             
-            <div className="flex items-center gap-6">
-              <div className="text-center">
-                <div className="text-gray-400 text-sm">Rank</div>
-                <div className="text-2xl font-bold text-white">#{currentUserRank}</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-gray-400 text-sm">Score</div>
-                <div className="text-2xl font-bold text-white">
-                  {users.find(u => u.walletAddress === walletAddress?.toString())?.score.toLocaleString() || 0}
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-gray-400 text-sm">Level</div>
-                <div className="text-2xl font-bold text-white">
-                  {users.find(u => u.walletAddress === walletAddress?.toString())?.level || 1}
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-gray-900/50 rounded-lg">
+                <button
+                  onClick={() => handleFilterChange('all')}
+                  className={`rounded px-3 py-1 text-sm ${
+                    periodFilter === 'all' 
+                      ? 'bg-purple-600 text-white' 
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  All Time
+                </button>
+                <button
+                  onClick={() => handleFilterChange('monthly')}
+                  className={`rounded px-3 py-1 text-sm ${
+                    periodFilter === 'monthly' 
+                      ? 'bg-purple-600 text-white' 
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => handleFilterChange('weekly')}
+                  className={`rounded px-3 py-1 text-sm ${
+                    periodFilter === 'weekly' 
+                      ? 'bg-purple-600 text-white' 
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  Weekly
+                </button>
+                <button
+                  onClick={() => handleFilterChange('daily')}
+                  className={`rounded px-3 py-1 text-sm ${
+                    periodFilter === 'daily' 
+                      ? 'bg-purple-600 text-white' 
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  Daily
+                </button>
               </div>
             </div>
           </div>
         </div>
-      )}
-      
-      {/* Search */}
-      <div className="relative max-w-md mb-6">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-          type="text"
-          placeholder="Search by username or wallet address..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="block w-full pl-10 pr-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-        />
-      </div>
-      
-      {/* Leaderboard Table */}
-      <div className="bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 overflow-hidden">
+        
         {isLoading ? (
-          <div className="animate-pulse p-6 space-y-4">
-            {[...Array(10)].map((_, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-800 rounded-full"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-800 rounded w-1/4"></div>
-                  <div className="h-3 bg-gray-800 rounded w-1/6"></div>
+          // Loading skeleton
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-gray-900 rounded-xl overflow-hidden animate-pulse h-72">
+                <div className="p-6 flex flex-col items-center">
+                  <div className="w-20 h-20 bg-gray-800 rounded-full mb-4" />
+                  <div className="h-6 bg-gray-800 rounded w-24 mb-3" />
+                  <div className="h-5 bg-gray-800 rounded w-32 mb-4" />
+                  <div className="h-4 bg-gray-800 rounded w-40" />
                 </div>
-                <div className="w-12 h-4 bg-gray-800 rounded"></div>
-                <div className="w-16 h-4 bg-gray-800 rounded"></div>
-                <div className="w-12 h-4 bg-gray-800 rounded"></div>
-                <div className="w-20 h-6 bg-gray-800 rounded"></div>
               </div>
             ))}
           </div>
-        ) : filteredUsers.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="bg-gray-900/80 border-b border-gray-800">
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Rank
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Level
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Influence Score
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center justify-center">
-                    <Headphones size={12} className="mr-1" /> Discoveries
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center justify-center">
-                    <TrendingUp size={12} className="mr-1" /> Trends
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center">
-                    <Badge size={12} className="mr-1" /> Badges
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map((user) => (
-                  <LeaderboardRow
-                    key={user.id}
-                    user={user}
-                    isCurrentUser={connected && user.walletAddress === walletAddress?.toString()}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
         ) : (
-          <div className="text-center py-12 px-4">
-            <Trophy className="h-12 w-12 text-purple-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-white mb-2">No results found</h2>
-            <p className="text-gray-400 mb-4">
-              Try adjusting your search query or check back later for updated rankings.
-            </p>
-            <button
-              onClick={() => setSearchQuery('')}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-            >
-              Show All Users
-            </button>
-          </div>
+          <>
+            {/* Top 3 users */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {top3.map((user, index) => (
+                <TopUserCard 
+                  key={user.id} 
+                  user={user} 
+                  rank={(index + 1) as 1 | 2 | 3} 
+                />
+              ))}
+            </div>
+            
+            {/* Leaderboard table */}
+            <div className="bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-black/30 border-b border-gray-800">
+                      <th className="px-4 py-3 text-center text-gray-400 font-semibold text-sm w-16">Rank</th>
+                      <th className="px-4 py-3 text-left text-gray-400 font-semibold text-sm">User</th>
+                      <th className="px-4 py-3 text-right text-gray-400 font-semibold text-sm w-24">Score</th>
+                      <th className="px-4 py-3 text-center text-gray-400 font-semibold text-sm w-24 hidden md:table-cell">Discoveries</th>
+                      <th className="px-4 py-3 text-right text-gray-400 font-semibold text-sm w-24 hidden md:table-cell">Change</th>
+                      <th className="px-4 py-3 text-center text-gray-400 font-semibold text-sm w-20">Profile</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/50">
+                    {rest.map((user, index) => (
+                      <LeaderboardRow
+                        key={user.id}
+                        user={user}
+                        rank={index + 4}
+                        change={getRandomChange(index)}
+                        isCurrentUser={walletAddress?.toString() === user.address}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Pagination placeholder */}
+              <div className="p-4 border-t border-gray-800 flex justify-between items-center">
+                <div className="text-sm text-gray-400">
+                  Showing 1-10 of {leaderboard.length}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-8 p-0" 
+                    disabled
+                  >
+                    &lt;
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 bg-purple-900/30 border-purple-500/30 text-purple-300"
+                    disabled
+                  >
+                    1
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-8 p-0" 
+                    disabled
+                  >
+                    &gt;
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Current user section */}
+            {connected && currentUserRank === null && (
+              <div className="mt-8 bg-gradient-to-b from-gray-900 to-black border border-purple-900/30 rounded-xl p-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-purple-900/30 flex items-center justify-center mx-auto mb-4">
+                  <Trophy className="text-purple-400" size={24} />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Join the Leaderboard</h3>
+                <p className="text-gray-400 mb-6 max-w-lg mx-auto">
+                  Start discovering music and building your influence to appear on the leaderboard.
+                  The more tracks you discover early, the higher your influence score will climb!
+                </p>
+                <Link href="/discover">
+                  <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
+                    Discover Music
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </>
         )}
-      </div>
-      
-      {/* Explanation Section */}
-      <div className="mt-10 bg-gray-900 bg-opacity-60 backdrop-blur-md rounded-xl border border-purple-900/20 p-6">
-        <h2 className="text-xl font-bold text-white mb-4">How Influence Works</h2>
-        <div className="text-gray-400 space-y-4">
-          <p>
-            Sasphy rewards users for discovering and promoting music before it becomes popular. 
-            Earn influence points when tracks you discover early gain traction in the community.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <div className="bg-purple-900/30 p-2 rounded-lg w-fit mb-3">
-                <Headphones className="h-5 w-5 text-purple-400" />
-              </div>
-              <h3 className="text-white font-medium mb-2">Discover Early</h3>
-              <p className="text-sm text-gray-400">
-                Find and collect music NFTs before they become trending. The earlier you discover a track, the higher your potential rewards.
-              </p>
-            </div>
-            
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <div className="bg-purple-900/30 p-2 rounded-lg w-fit mb-3">
-                <TrendingUp className="h-5 w-5 text-purple-400" />
-              </div>
-              <h3 className="text-white font-medium mb-2">Earn Points</h3>
-              <p className="text-sm text-gray-400">
-                Gain influence points when tracks you've discovered reach popularity milestones. Points scale with a track's success.
-              </p>
-            </div>
-            
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <div className="bg-purple-900/30 p-2 rounded-lg w-fit mb-3">
-                <Badge className="h-5 w-5 text-purple-400" />
-              </div>
-              <h3 className="text-white font-medium mb-2">Unlock Rewards</h3>
-              <p className="text-sm text-gray-400">
-                Earn badges, levels, and special privileges as your influence score grows. Higher ranks may receive exclusive perks.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
