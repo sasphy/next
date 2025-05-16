@@ -41,7 +41,7 @@ const envVars: EnvVar[] = [
   { key: 'RPC_URL_SOLANA_DEVNET', required: false },
   { key: 'RPC_URL_SOLANA_MAINNET', required: false },
   
-  // Pinata - IPFS Storage
+  // Pinata - IPFS Storage - JWT is SERVER-SIDE ONLY
   { key: 'PINATA_JWT', required: true },
   { key: 'NEXT_PUBLIC_GATEWAY_URL', required: true, isPublic: true },
   
@@ -100,8 +100,8 @@ const formatUrl = (url: string): string => {
 };
 
 const env = {
-  // IPFS / Pinata configuration
-  pinataJwt: getEnvValue('PINATA_JWT') || getEnvValue('NEXT_PUBLIC_PINATA_JWT') || '',
+  // IPFS / Pinata configuration - PINATA_JWT is SERVER-SIDE ONLY
+  pinataJwt: getEnvValue('PINATA_JWT') || '',
   gatewayUrl: getEnvValue('NEXT_PUBLIC_GATEWAY_URL') || 'gateway.pinata.cloud',
   
   // Solana configuration

@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import env from '@/lib/env';
 
 /**
- * API route for uploading JSON metadata to Pinata
+ * API route for uploading JSON to Pinata IPFS
  * Acts as a proxy to protect API keys
  */
 export async function POST(request: Request) {
   try {
-    // Get the metadata from the request
+    // Get the JSON from the request
     const { metadata } = await request.json();
     
     if (!metadata) {
@@ -17,52 +17,72 @@ export async function POST(request: Request) {
       );
     }
     
-    // Get Pinata credentials from environment variables
-    const pinataApiKey = process.env.PINATA_API_KEY;
-    const pinataApiSecret = process.env.PINATA_API_SECRET;
+    // Get Pinata JWT from environment - server-side only!
+    const pinataJwt = process.env.PINATA_JWT;
     
-    if (!pinataApiKey || !pinataApiSecret) {
-      console.error('Pinata credentials not found in environment variables');
+    // Verify credentials
+    if (!pinataJwt) {
+      console.error('Pinata JWT not found');
       return NextResponse.json(
-        { error: 'Pinata configuration error' }, 
+        { error: 'Pinata configuration error - JWT not found. Add PINATA_JWT to your .env.local file.' },
         { status: 500 }
       );
     }
     
-    // Make the request to Pinata
-    const response = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'pinata_api_key': pinataApiKey,
-        'pinata_secret_api_key': pinataApiSecret,
-      },
-      body: JSON.stringify({
-        pinataContent: metadata,
-        pinataMetadata: {
-          name: metadata.name || 'sasphy-metadata',
+    try {
+      // Upload JSON to Pinata IPFS with direct API call
+      const response = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${pinataJwt}`
         },
-      }),
-    });
-    
-    // Check for errors
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Pinata JSON upload error:', errorText);
-      return NextResponse.json(
-        { error: 'Failed to upload JSON to Pinata' }, 
-        { status: response.status }
-      );
+        body: JSON.stringify(metadata)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Pinata API error: ${response.status} ${response.statusText}`);
+      }
+      
+      // Get the response data
+      const result = await response.json();
+      
+      // Format the response to match the expected format
+      const responseData = {
+        IpfsHash: result.IpfsHash,
+        PinSize: result.PinSize,
+        Timestamp: result.Timestamp
+      };
+      
+      return NextResponse.json(responseData);
+      
+    } catch (error: any) {
+      console.error('Error uploading JSON to Pinata:', error);
+      
+      // Return specific error messages
+      if (error.message?.includes('authentication')) {
+        return NextResponse.json(
+          { error: 'Pinata authentication failed - Invalid JWT' },
+          { status: 401 }
+        );
+      } else {
+        return NextResponse.json(
+          { 
+            error: 'Failed to upload JSON to Pinata',
+            details: error.message || 'Unknown error'
+          },
+          { status: 500 }
+        );
+      }
     }
     
-    // Return the response from Pinata
-    const data = await response.json();
-    return NextResponse.json(data);
-    
   } catch (error) {
-    console.error('Error in upload-json route:', error);
+    console.error('Unhandled error in upload-json route:', error);
     return NextResponse.json(
-      { error: 'Internal server error' }, 
+      { 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }

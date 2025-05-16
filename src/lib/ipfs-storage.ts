@@ -73,7 +73,7 @@ export const initializePinata = () => {
     if (!pinataJwt) {
       console.warn('Pinata JWT not found in environment. To fix this:');
       console.warn('1. Create a .env.local file in the project root');
-      console.warn('2. Add NEXT_PUBLIC_PINATA_JWT=your_jwt_token_here');
+      console.warn('2. Add PINATA_JWT=your_jwt_token_here');
       console.warn('Using API proxy fallback for now...');
       return;
     }

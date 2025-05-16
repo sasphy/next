@@ -20,6 +20,51 @@ Sasphy is a revolutionary music platform built on the Solana blockchain, designe
 - **Storage**: AWS S3 for music files
 - **Real-time Data**: Redis for caching and scoring
 
+## Environment Setup
+
+To run this application properly, you need to configure some environment variables. Create a `.env.local` file in the project root with the following content:
+
+```
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
+
+# Feature Flags
+NEXT_PUBLIC_ENABLE_AUTH=true
+NEXT_PUBLIC_ENABLE_PURCHASE=true
+
+# Environment
+NODE_ENV=development
+
+# Solana Configuration
+NEXT_PUBLIC_SOLANA_NETWORK=devnet
+NEXT_PUBLIC_SOLANA_PROGRAM_ID=5tGHM7n1mxNEqUxEGSgC2yobV11zVUPChZ8ECEQWTwRV
+NEXT_PUBLIC_SOLANA_ADMIN_WALLET=63xvdhigaoS5rUxiqDzvRPBTLBbRXezX1dYm3nMvXri6
+NEXT_PUBLIC_SOLANA_TREASURY_ADDRESS=9RgXRzRWMAvfjunEUK8QCJ5WGs8oVreTfXtVyAvABVBb
+NEXT_PUBLIC_SOLANA_PROTOCOL_PDA=Protocol_PDA_5tGHM7n1
+
+# RPC URLs
+RPC_URL_SOLANA_DEVNET=https://api.devnet.solana.com
+RPC_URL_SOLANA_MAINNET=https://api.mainnet-beta.solana.com
+
+# Convex (Database)
+NEXT_PUBLIC_CONVEX_URL=your-convex-url-here
+
+# IPFS/Pinata Configuration - REQUIRED
+PINATA_API_KEY=your-pinata-api-key
+PINATA_API_SECRET=your-pinata-api-secret
+PINATA_JWT=your-pinata-jwt
+NEXT_PUBLIC_GATEWAY_URL=https://gateway.pinata.cloud/ipfs
+```
+
+### Setting up Pinata Credentials
+
+1. Create an account at [Pinata](https://app.pinata.cloud/register)
+2. Go to your dashboard and generate an API key
+3. Make sure to give it upload permissions
+4. Copy the API Key, API Secret, and JWT
+5. Paste them into your `.env.local` file
+
 ## Getting Started
 
 1. Clone the repository
