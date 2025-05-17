@@ -30,9 +30,6 @@ export const SolanaWalletProvider: FC<SolanaWalletProviderProps> = ({
   // Effect to set mounted after hydration
   useEffect(() => {
     setMounted(true);
-    return () => {
-      setMounted(false);
-    };
   }, []);
 
   // You can also provide a custom RPC endpoint
@@ -40,7 +37,6 @@ export const SolanaWalletProvider: FC<SolanaWalletProviderProps> = ({
     try {
       // Only run in client-side environment
       if (typeof window === 'undefined') {
-        console.log('Server-side rendering, using default cluster API');
         return clusterApiUrl(network);
       }
 
@@ -57,7 +53,6 @@ export const SolanaWalletProvider: FC<SolanaWalletProviderProps> = ({
       }
       
       if (customRpc) {
-        console.log('Using custom RPC endpoint:', customRpc);
         return customRpc;
       }
       
@@ -70,17 +65,14 @@ export const SolanaWalletProvider: FC<SolanaWalletProviderProps> = ({
       
       // Fallback to environment-specific RPC URLs
       if (process.env.NEXT_PUBLIC_RPC_URL_SOLANA_DEVNET && network === WalletAdapterNetwork.Devnet) {
-        console.log('Using devnet RPC endpoint from env');
         return process.env.NEXT_PUBLIC_RPC_URL_SOLANA_DEVNET;
       }
       
       if (process.env.NEXT_PUBLIC_RPC_URL_SOLANA_MAINNET && network === WalletAdapterNetwork.Mainnet) {
-        console.log('Using mainnet RPC endpoint from env');
         return process.env.NEXT_PUBLIC_RPC_URL_SOLANA_MAINNET;
       }
       
       // Final fallback to default Solana cluster API
-      console.log(`Using default cluster API for ${network}`);
       return clusterApiUrl(network);
     } catch (error) {
       console.error('Error determining RPC endpoint:', error);
@@ -125,7 +117,7 @@ export const SolanaWalletProvider: FC<SolanaWalletProviderProps> = ({
   // Once mounted and on client-side, render full wallet provider tree
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect={true}>
+      <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

@@ -14,9 +14,10 @@ export function useConvexAuth() {
   // Add a mounted state to handle hydration
   const [mounted, setMounted] = useState(false);
   
-  // Use optional chaining to safely handle when wallet context isn't ready
+  // Get wallet context safely to prevent errors if WalletProvider isn't mounted yet
   const wallet = useWallet();
-  const { publicKey, connected } = wallet || {};
+  const publicKey = wallet?.publicKey;
+  const connected = wallet?.connected;
   
   const [userId, setUserId] = useState<Id<'users'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);

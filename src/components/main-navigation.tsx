@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { CombinedWalletConnectButton } from './wallet/combined-wallet-connect-button';
+import CombinedWalletConnectButton from './wallet/combined-wallet-connect-button';
 import { useWalletAuth } from '@/hooks/use-wallet-auth';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -103,6 +103,17 @@ export default function MainNavigation() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               </div>
             )}
+
+            {/* Create button */}
+            {updatedNavLinks.find(link => link.isPrimary) && (
+              <Link 
+                href="/create" 
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-1.5 px-4 rounded-lg font-medium flex items-center gap-1.5 ml-3 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Create
+              </Link>
+            )}
             
             {mounted && isWalletConnected ? (
               <div className="flex items-center gap-2">
@@ -127,16 +138,7 @@ export default function MainNavigation() {
               <CombinedWalletConnectButton />
             )}
             
-            {/* Create button */}
-            {updatedNavLinks.find(link => link.isPrimary) && (
-              <Link 
-                href="/create" 
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-1.5 px-4 rounded-lg font-medium flex items-center gap-1.5 ml-3 transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                Create
-              </Link>
-            )}
+            
           </div>
           
           {/* Mobile Menu Button */}

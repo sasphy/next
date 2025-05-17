@@ -9,7 +9,15 @@ import { PublicKey } from '@solana/web3.js';
 // Import Solana wallet adapter styles
 require('@solana/wallet-adapter-react-ui/styles.css');
 
-const WalletConnectButton: FC = () => {
+interface WalletConnectButtonProps {
+  onWalletConnect?: (address: string) => void;
+  className?: string;
+}
+
+const WalletConnectButton: FC<WalletConnectButtonProps> = ({ 
+  onWalletConnect,
+  className = ''
+}) => {
   // Use a state to track client-side rendering
   const [mounted, setMounted] = useState(false);
   
@@ -37,13 +45,10 @@ const WalletConnectButton: FC = () => {
         publicKey: wallet.publicKey
       });
 
-      // Log wallet state for debugging
-      console.log('Wallet state:', { 
-        connected: wallet.connected, 
-        connecting: wallet.connecting, 
-        disconnecting: wallet.disconnecting, 
-        publicKey: wallet.publicKey?.toString() 
-      });
+      // Notify parent component when wallet connects
+      if (wallet.connected && wallet.publicKey && onWalletConnect) {
+        onWalletConnect(wallet.publicKey.toString());
+      }
     }
   }, [
     mounted, 
@@ -51,13 +56,14 @@ const WalletConnectButton: FC = () => {
     wallet?.connected, 
     wallet?.connecting, 
     wallet?.disconnecting, 
-    wallet?.publicKey
+    wallet?.publicKey,
+    onWalletConnect
   ]);
 
   // If not mounted yet (server-side), render a placeholder button
   if (!mounted) {
     return (
-      <div className="wallet-button-wrapper">
+      <div className={`wallet-button-wrapper ${className}`}>
         <Button className="custom-wallet-button bg-primary hover:bg-primary/90 text-primary-foreground py-1.5 h-10 rounded-lg font-medium transition-colors">
           Connect Wallet
         </Button>
@@ -68,7 +74,7 @@ const WalletConnectButton: FC = () => {
   // Custom styles for the wallet button
   return (
     <div 
-      className="wallet-button-wrapper relative" 
+      className={`wallet-button-wrapper relative ${className}`} 
       data-mounted={mounted} 
       data-connected={walletState.connected}
     >

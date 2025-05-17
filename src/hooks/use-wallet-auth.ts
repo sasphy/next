@@ -1,124 +1,100 @@
 'use client';
 
+import { useEffect, useState, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useSasphy } from '@/components/providers/sasphy-provider';
-import { useCallback, useState, useEffect } from 'react';
-import { 
-  SignatureResult, 
-  VersionedTransaction, 
-  VersionedMessage, 
-  TransactionMessage,
-  Connection, 
-  PublicKey 
-} from '@solana/web3.js';
 import bs58 from 'bs58';
-import { toast } from 'sonner';
 
+/**
+ * This hook manages authentication between the wallet and application
+ * It provides login/logout functions and authentication state
+ */
 export function useWalletAuth() {
   // Add a mounted state to handle hydration
   const [mounted, setMounted] = useState(false);
   
-  // Use optional chaining to safely handle missing wallet context
+  // Get wallet context safely to prevent errors if WalletProvider isn't mounted yet
   const wallet = useWallet();
-  const { publicKey, signMessage, signTransaction, connected } = wallet || {};
+  const publicKey = wallet?.publicKey;
+  const signMessage = wallet?.signMessage;
+  const signTransaction = wallet?.signTransaction;
+  const connected = wallet?.connected;
+  
   const { login, logout, isAuthenticated, address } = useSasphy();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-
-  // Set mounted after hydration
+  
+  // Set mounted state after hydration
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handleSignIn = useCallback(async () => {
-    if (!mounted || !publicKey || !signMessage) {
-      toast.error('Wallet not connected or does not support message signing');
-      return false;
+  // Sign in function using wallet signature
+  const signIn = useCallback(async () => {
+    if (!publicKey || !signMessage) {
+      console.warn('Wallet not connected or signMessage not available');
+      return;
     }
 
     setIsLoggingIn(true);
     try {
-      // 1. Get nonce from backend
-      let nonceResponse;
-      try {
-        nonceResponse = await fetch('/api/blockchain/auth/nonce', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ address: publicKey.toString() })
-        });
-        
-        if (!nonceResponse.ok) {
-          throw new Error(`Failed to get nonce from server: ${nonceResponse.status}`);
-        }
-      } catch (e) {
-        console.error('Nonce API error:', e);
-        toast.error('Could not connect to authentication service. Please try again later.');
-        return false;
-      }
+      // Create a challenge message 
+      const message = new TextEncoder().encode(
+        `Welcome to Sasphy Music!\n\nSign this message to authenticate with your wallet.\n\nNonce: ${Date.now()}`
+      );
       
-      const { data: nonceData } = await nonceResponse.json();
+      // Request signature from the wallet
+      const signature = await signMessage(message);
       
-      if (!nonceData || !nonceData.nonce) {
-        toast.error('Invalid authentication response from server');
-        return false;
-      }
+      // Call login from hook/API with signature and public key
+      await login(publicKey.toString(), bs58.encode(signature));
       
-      // 2. Sign the nonce
-      const message = `Sign this message to verify your wallet ownership: ${nonceData.nonce}`;
-      const encodedMessage = new TextEncoder().encode(message);
-      
-      let signature;
-      try {
-        signature = await signMessage(encodedMessage);
-      } catch (e) {
-        console.error('Signing error:', e);
-        toast.error('Signature was rejected. Please try again.');
-        return false;
-      }
-      
-      // 3. Send signature to backend to complete login
-      const loginSuccess = await login(publicKey.toString(), bs58.encode(signature));
-      
-      if (loginSuccess) {
-        toast.success('Successfully signed in!');
-      } else {
-        toast.error('Authentication failed. Please try again.');
-      }
-      
-      return loginSuccess;
+      console.log('Authentication successful');
     } catch (error) {
-      console.error('Sign-in error:', error);
-      toast.error('Failed to sign in. Please try again later.');
-      return false;
+      console.error('Authentication error:', error);
     } finally {
       setIsLoggingIn(false);
     }
-  }, [publicKey, signMessage, login, mounted]);
+  }, [publicKey, signMessage, login]);
 
-  const handleSignOut = useCallback(() => {
-    logout();
-    toast.info('Signed out successfully');
+  // Sign out function
+  const signOut = useCallback(async () => {
+    try {
+      await logout();
+      console.log('Signed out successfully');
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   }, [logout]);
 
-  // Return empty values if not mounted to prevent client/server mismatch
+  // Auto-authenticate when wallet connects
+  useEffect(() => {
+    if (!mounted) return; // Skip during SSR
+    
+    // If wallet is connected but user is not authenticated, attempt sign in
+    if (connected && publicKey && !isAuthenticated && !isLoggingIn) {
+      // Consider adding a user preference check before auto sign-in
+      // signIn();
+    }
+  }, [connected, publicKey, isAuthenticated, isLoggingIn, signIn, mounted]);
+
+  // Return default values if not mounted
   if (!mounted) {
     return {
+      signIn,
+      signOut,
+      isLoggingIn,
       isWalletConnected: false,
       isAuthenticated: false,
-      isLoggingIn: false,
-      walletAddress: null,
-      signIn: () => Promise.resolve(false),
-      signOut: () => {},
-      authenticatedAddress: null
     };
   }
 
   return {
+    signIn,
+    signOut,
+    isLoggingIn,
     isWalletConnected: !!connected,
     isAuthenticated,
-    isLoggingIn,
-    walletAddress: publicKey?.toString() || null,
-    signIn: handleSignIn,
-    signOut: handleSignOut,
-    authenticatedAddress: address
   };
 }
+
+export default useWalletAuth;

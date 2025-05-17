@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useEffect, useState, useCallback } from 'react';
+import { FC, useEffect, useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { CoinbaseWalletSDK } from '@coinbase/wallet-sdk';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
@@ -17,7 +17,7 @@ const CoinbaseWalletConnectButton: FC<CoinbaseWalletConnectButtonProps> = ({
   className = ''
 }) => {
   const [mounted, setMounted] = useState(false);
-  const [provider, setProvider] = useState<any>(null);
+  const providerRef = useRef<any>(null);
   const [address, setAddress] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number>(8453); // Base mainnet by default
   const [isConnecting, setIsConnecting] = useState(false);
@@ -57,67 +57,68 @@ const CoinbaseWalletConnectButton: FC<CoinbaseWalletConnectButtonProps> = ({
         setChainId(8453); // Base Mainnet
       }
 
-      // Initialize Coinbase Wallet SDK
-      const sdk = new CoinbaseWalletSDK({
-        appName: 'Sasphy Music',
-        appChainIds: [chainId],
-        appLogoUrl: '/assets/logo.svg', // Update with your app's logo
-      });
-
-      // Create the provider with Smart Wallet preferences
-      const web3Provider = sdk.makeWeb3Provider({
-        options: 'smartWalletOnly',
-      });
-
-      setProvider(web3Provider);
-
-      // Check if already connected
-      if (web3Provider) {
-        web3Provider
-          .request({ method: 'eth_accounts' })
-          .then((accounts: string[]) => {
-            if (accounts && accounts.length > 0) {
-              handleAccountsChanged(accounts);
-            }
-          })
-          .catch((error: Error) => console.error('Error checking accounts', error));
-
-        // Setup event listeners with proper type handling
-        const accountsChangedHandler = (accounts: unknown) => {
-          handleAccountsChanged(accounts as string[]);
-        };
-        
-        web3Provider.on('accountsChanged', accountsChangedHandler);
-        web3Provider.on('chainChanged', handleChainChanged);
-        web3Provider.on('disconnect', handleDisconnect);
-        
-        // Store the provider and handlers for cleanup
-        setProvider({
-          provider: web3Provider,
-          accountsChangedHandler,
+      try {
+        // Initialize Coinbase Wallet SDK
+        const sdk = new CoinbaseWalletSDK({
+          appName: 'Sasphy Music',
+          appChainIds: [chainId],
+          appLogoUrl: '/assets/logo.svg', // Update with your app's logo
         });
+
+        // Create the provider with Smart Wallet preferences
+        const web3Provider = sdk.makeWeb3Provider({
+          options: 'smartWalletOnly',
+        });
+
+        providerRef.current = web3Provider;
+
+        // Check if already connected
+        if (web3Provider) {
+          web3Provider.request({ method: 'eth_requestAccounts' })
+            .then((accounts: string[] | unknown) => {
+              if (Array.isArray(accounts) && accounts.length > 0) {
+                handleAccountsChanged(accounts);
+              }
+            })
+            .catch((error) => {
+              console.error('Error checking accounts:', error || 'Unknown error');
+            });
+
+          // Setup event listeners with proper type handling
+          const accountsChangedHandler = (accounts: unknown) => {
+            if (Array.isArray(accounts) && accounts.length > 0) {
+              handleAccountsChanged(accounts as string[]);
+            }
+          };
+          
+          web3Provider.on('accountsChanged', accountsChangedHandler);
+          web3Provider.on('chainChanged', handleChainChanged);
+          web3Provider.on('disconnect', handleDisconnect);
+          
+          // Store event handlers for cleanup
+          return () => {
+            if (web3Provider) {
+              web3Provider.removeListener('accountsChanged', accountsChangedHandler);
+              web3Provider.removeListener('chainChanged', handleChainChanged);
+              web3Provider.removeListener('disconnect', handleDisconnect);
+            }
+          };
+        }
+      } catch (error) {
+        console.error('Failed to initialize Coinbase wallet provider:', error);
       }
     }
-
-    return () => {
-      // Cleanup event listeners
-      if (provider && provider.provider) {
-        provider.provider.removeListener('accountsChanged', provider.accountsChangedHandler);
-        provider.provider.removeListener('chainChanged', handleChainChanged);
-        provider.provider.removeListener('disconnect', handleDisconnect);
-      }
-    };
   }, [chainId, network, handleAccountsChanged]);
 
   const connectWallet = async () => {
-    if (!provider || !provider.provider) {
+    if (!providerRef.current) {
       console.error('Provider not initialized');
       return;
     }
 
     setIsConnecting(true);
     try {
-      const accounts = await provider.provider.request({ method: 'eth_requestAccounts' });
+      const accounts = await providerRef.current.request({ method: 'eth_requestAccounts' });
       handleAccountsChanged(accounts);
     } catch (error) {
       console.error('Error connecting wallet:', error);
@@ -127,10 +128,10 @@ const CoinbaseWalletConnectButton: FC<CoinbaseWalletConnectButtonProps> = ({
   };
 
   const disconnectWallet = async () => {
-    if (!provider || !provider.provider) return;
+    if (!providerRef.current) return;
 
     try {
-      await provider.provider.disconnect();
+      await providerRef.current.disconnect();
       setAddress(null);
     } catch (error) {
       console.error('Error disconnecting wallet:', error);
@@ -147,9 +148,8 @@ const CoinbaseWalletConnectButton: FC<CoinbaseWalletConnectButtonProps> = ({
       {address ? (
         <div className="flex items-center space-x-2">
           <Button 
-            variant="secondary" 
-            size="sm" 
-            className="font-medium"
+            variant="outline" 
+            className="font-medium py-1.5 px-4 rounded-lg"
             onClick={disconnectWallet}
           >
             {`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}
@@ -159,8 +159,7 @@ const CoinbaseWalletConnectButton: FC<CoinbaseWalletConnectButtonProps> = ({
         <Button
           onClick={connectWallet}
           disabled={isConnecting}
-          className="relative bg-blue-600 hover:bg-blue-700 text-white"
-          size="sm"
+          className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-1.5 px-4 rounded-lg font-medium transition-colors"
         >
           {isConnecting ? 'Connecting...' : 'Coinbase Smart Wallet'}
         </Button>
