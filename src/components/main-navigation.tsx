@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
-import WalletConnectButton from './wallet/wallet-connect-button';
+import { CombinedWalletConnectButton } from './wallet/combined-wallet-connect-button';
 import { useWalletAuth } from '@/hooks/use-wallet-auth';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -121,10 +121,10 @@ export default function MainNavigation() {
                     Sign In
                   </button>
                 )}
-                <WalletConnectButton />
+                <CombinedWalletConnectButton />
               </div>
             ) : (
-              <WalletConnectButton />
+              <CombinedWalletConnectButton />
             )}
             
             {/* Create button */}
@@ -194,7 +194,7 @@ export default function MainNavigation() {
             <div className="pt-4 pb-2 border-t border-border mt-4">
               {mounted && isWalletConnected ? (
                 <div className="space-y-3">
-                  {isAuthenticated ? (
+                  {/* {isAuthenticated ? (
                     <button 
                       onClick={() => {
                         signOut();
@@ -214,11 +214,12 @@ export default function MainNavigation() {
                     >
                       Sign In
                     </button>
-                  )}
-                  <WalletConnectButton />
+                  )
+                  } */}
+                  <CombinedWalletConnectButton />
                 </div>
               ) : (
-                <WalletConnectButton />
+                <CombinedWalletConnectButton />
               )}
             </div>
           </div>

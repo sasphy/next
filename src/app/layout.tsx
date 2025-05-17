@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Inter, Montserrat } from 'next/font/google';
 import { SasphyProvider } from "@/components/providers/sasphy-provider";
-import { SolanaWalletProvider } from "@/components/wallet/solana-wallet-provider";
+import { CombinedWalletProvider } from "@/components/wallet/combined-wallet-provider";
 import { MusicPlayerProvider } from "@/components/music/music-player-context";
 import MusicPlayerBar from "@/components/music/music-player-bar";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -87,7 +87,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SolanaWalletProvider>
+          <CombinedWalletProvider>
             <ConvexClientProvider>
               <ConvexAuthProvider>
                 <SasphyProvider>
@@ -98,7 +98,7 @@ export default function RootLayout({
                       </header>
                       <main className="flex-1 w-full px-4 sm:px-6 py-6">
                         {/* Show system debug in development */}
-                        {process.env.NODE_ENV !== 'production' && <SystemDebug />}
+                        {/* {process.env.NODE_ENV !== 'production' && <SystemDebug />} */}
                         {children}
                       </main>
                       <MusicPlayerBar />
@@ -152,7 +152,7 @@ export default function RootLayout({
                 </SasphyProvider>
               </ConvexAuthProvider>
             </ConvexClientProvider>
-          </SolanaWalletProvider>
+          </CombinedWalletProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -99,42 +99,50 @@ const formatUrl = (url: string): string => {
   return url.replace(/\/$/, '');
 };
 
-const env = {
-  // IPFS / Pinata configuration - PINATA_JWT is SERVER-SIDE ONLY
-  pinataJwt: getEnvValue('PINATA_JWT') || '',
-  gatewayUrl: getEnvValue('NEXT_PUBLIC_GATEWAY_URL') || 'gateway.pinata.cloud',
-  
-  // Solana configuration
-  solanaNetwork: getEnvValue('NEXT_PUBLIC_SOLANA_NETWORK') || 'devnet',
-  solanaProgramId: getEnvValue('NEXT_PUBLIC_SOLANA_PROGRAM_ID') || '5tGHM7n1mxNEqUxEGSgC2yobV11zVUPChZ8ECEQWTwRV',
-  solanaAdminWallet: getEnvValue('NEXT_PUBLIC_SOLANA_ADMIN_WALLET') || '63xvdhigaoS5rUxiqDzvRPBTLBbRXezX1dYm3nMvXri6',
-  solanaTreasuryAddress: getEnvValue('NEXT_PUBLIC_SOLANA_TREASURY_ADDRESS') || '9RgXRzRWMAvfjunEUK8QCJ5WGs8oVreTfXtVyAvABVBb',
-  solanaProtocolPda: getEnvValue('NEXT_PUBLIC_SOLANA_PROTOCOL_PDA') || 'Protocol_PDA_5tGHM7n1',
-  
-  // Convex configuration
-  convexUrl: formatUrl(getEnvValue('NEXT_PUBLIC_CONVEX_URL')) || '',
-  
-  // API configuration
-  apiUrl: getEnvValue('NEXT_PUBLIC_API_URL') || 'http://localhost:3000',
-  frontendUrl: getEnvValue('NEXT_PUBLIC_FRONTEND_URL') || 'http://localhost:3000',
-  minioUrl: getEnvValue('NEXT_PUBLIC_MINIO_URL') || '',
-  
-  // Features
-  enableAuth: getEnvValue('NEXT_PUBLIC_ENABLE_AUTH') === 'true',
-  enablePurchase: getEnvValue('NEXT_PUBLIC_ENABLE_PURCHASE') === 'true',
-  
-  // Web3
-  factoryAddress: getEnvValue('NEXT_PUBLIC_FACTORY_ADDRESS') || '5tGHM7n1mxNEqUxEGSgC2yobV11zVUPChZ8ECEQWTwRV',
-  
-  // Solana RPC URLs
-  rpcUrlSolanaDevnet: getEnvValue('RPC_URL_SOLANA_DEVNET') || 'https://api.devnet.solana.com',
-  rpcUrlSolanaMainnetBeta: getEnvValue('RPC_URL_SOLANA_MAINNET') || 'https://api.mainnet-beta.solana.com',
-  
-  // Moralis
-  moralisApiKey: getEnvValue('MORALIS_API_KEY') || '',
-  
-  // Development
-  isDevelopment: getEnvValue('NODE_ENV') === 'development',
-};
+// Helper function to build the global configuration
+function buildGlobalConfig(config: Record<string, any>) {
+  return {
+    // IPFS / Pinata configuration - PINATA_JWT is SERVER-SIDE ONLY
+    pinataJwt: getEnvValue('PINATA_JWT') || '',
+    gatewayUrl: getEnvValue('NEXT_PUBLIC_GATEWAY_URL') || 'gateway.pinata.cloud',
+    
+    // Solana configuration
+    solanaNetwork: getEnvValue('NEXT_PUBLIC_SOLANA_NETWORK') || 'devnet',
+    solanaProgramId: getEnvValue('NEXT_PUBLIC_SOLANA_PROGRAM_ID') || 'A3hPb35qCY6eqdcgqSGKWKCUDKnE9uUrXPowyaRGguZK',
+    solanaAdminWallet: getEnvValue('NEXT_PUBLIC_SOLANA_ADMIN_WALLET') || '7vCWanYCd848kSEqEbZUuamhgFhnKqDh4b2TC1fVEGg9',
+    solanaTreasuryAddress: getEnvValue('NEXT_PUBLIC_SOLANA_TREASURY_ADDRESS') || 'FXHUWiWF2QcjnZ9qCkxrzKpjuwzgr3e8acCPV4sKPRSV',
+    solanaProtocolPda: getEnvValue('NEXT_PUBLIC_SOLANA_PROTOCOL_PDA') || '4VGsLuKatfBkEm8bSH6uKnWagXBx9QfxeGxuih6oN2sM',
+    
+    // Convex configuration
+    convexUrl: formatUrl(getEnvValue('NEXT_PUBLIC_CONVEX_URL')) || '',
+    
+    // API configuration
+    apiUrl: getEnvValue('NEXT_PUBLIC_API_URL') || 'http://localhost:3000',
+    frontendUrl: getEnvValue('NEXT_PUBLIC_FRONTEND_URL') || 'http://localhost:3000',
+    minioUrl: getEnvValue('NEXT_PUBLIC_MINIO_URL') || '',
+    
+    // Features
+    enableAuth: getEnvValue('NEXT_PUBLIC_ENABLE_AUTH') === 'true',
+    enablePurchase: getEnvValue('NEXT_PUBLIC_ENABLE_PURCHASE') === 'true',
+    
+    // Web3
+    factoryAddress: getEnvValue('NEXT_PUBLIC_FACTORY_ADDRESS') || 'A3hPb35qCY6eqdcgqSGKWKCUDKnE9uUrXPowyaRGguZK',
+    
+    // Solana RPC URLs
+    rpcUrlSolanaDevnet: getEnvValue('RPC_URL_SOLANA_DEVNET') || 'https://api.devnet.solana.com',
+    rpcUrlSolanaMainnetBeta: getEnvValue('RPC_URL_SOLANA_MAINNET') || 'https://api.mainnet-beta.solana.com',
+    
+    // Moralis
+    moralisApiKey: getEnvValue('MORALIS_API_KEY') || '',
+    
+    // Development
+    isDevelopment: getEnvValue('NODE_ENV') === 'development',
+    
+    ...config // Merge any additional config
+  };
+}
+
+// Get the environment value or return a default
+export const env = buildGlobalConfig({});
 
 export default env;

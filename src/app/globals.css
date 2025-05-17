@@ -585,3 +585,349 @@ input[type="range"]::-moz-range-thumb {
     padding-bottom: calc(var(--spacing) * 2);
   }
 }
+
+/* Motion Animation Utilities */
+@layer utilities {
+  /* Scale animations */
+  .motion-scale-in-\[0\.5\] {
+    animation: scaleIn0_5 var(--motion-duration, 0.5s) var(--motion-ease, ease) forwards;
+  }
+  
+  .motion-scale-in-\[0\.95\] {
+    animation: scaleIn0_95 var(--motion-duration, 0.5s) var(--motion-ease, ease) forwards;
+  }
+  
+  @keyframes scaleIn0_5 {
+    from { transform: scale(0.5); }
+    to { transform: scale(1); }
+  }
+  
+  @keyframes scaleIn0_95 {
+    from { transform: scale(0.95); }
+    to { transform: scale(1); }
+  }
+
+  /* Translate animations */
+  .motion-translate-y-in-\[-25px\] {
+    animation: translateYInMinus25 var(--motion-duration, 0.5s) var(--motion-ease, ease) forwards;
+  }
+  
+  .motion-translate-y-in-\[20px\] {
+    animation: translateYIn20 var(--motion-duration, 0.5s) var(--motion-ease, ease) forwards;
+  }
+  
+  .motion-translate-y-in-\[25px\] {
+    animation: translateYIn25 var(--motion-duration, 0.5s) var(--motion-ease, ease) forwards;
+  }
+  
+  .motion-translate-y-in-\[30px\] {
+    animation: translateYIn30 var(--motion-duration, 0.5s) var(--motion-ease, ease) forwards;
+  }
+  
+  .motion-translate-y-in-\[40px\] {
+    animation: translateYIn40 var(--motion-duration, 0.5s) var(--motion-ease, ease) forwards;
+  }
+  
+  @keyframes translateYInMinus25 {
+    from { transform: translateY(-25px); }
+    to { transform: translateY(0); }
+  }
+  
+  @keyframes translateYIn20 {
+    from { transform: translateY(20px); }
+    to { transform: translateY(0); }
+  }
+  
+  @keyframes translateYIn25 {
+    from { transform: translateY(25px); }
+    to { transform: translateY(0); }
+  }
+  
+  @keyframes translateYIn30 {
+    from { transform: translateY(30px); }
+    to { transform: translateY(0); }
+  }
+  
+  @keyframes translateYIn40 {
+    from { transform: translateY(40px); }
+    to { transform: translateY(0); }
+  }
+
+  /* Opacity animations */
+  .motion-opacity-in-\[0\%\] {
+    animation: opacityIn0 var(--motion-duration, 0.5s) var(--motion-ease, ease) forwards;
+  }
+  
+  @keyframes opacityIn0 {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Duration modifier */
+  .motion-duration-\[0\.5s\] {
+    --motion-duration: 0.5s;
+  }
+  
+  .motion-duration-\[0\.6s\] {
+    --motion-duration: 0.6s;
+  }
+  
+  .motion-duration-\[0\.7s\] {
+    --motion-duration: 0.7s;
+  }
+  
+  .motion-duration-\[0\.8s\] {
+    --motion-duration: 0.8s;
+  }
+
+  /* Easing functions */
+  .motion-ease-out {
+    --motion-ease: var(--ease-out);
+  }
+  
+  .motion-ease-in {
+    --motion-ease: var(--ease-in);
+  }
+  
+  .motion-ease-in-out {
+    --motion-ease: var(--ease-in-out);
+  }
+  
+  .motion-ease-bounce {
+    --motion-ease: var(--ease-bounce);
+  }
+  
+  /* Delay modifier - Applied to each card in sequence */
+  .motion-delay-\[0\.1s\] {
+    animation-delay: 0.1s;
+  }
+  
+  .motion-delay-\[0\.2s\] {
+    animation-delay: 0.2s;
+  }
+  
+  .motion-delay-\[0\.3s\] {
+    animation-delay: 0.3s;
+  }
+}
+
+/* Sound Token Specific Styles */
+@layer utilities {
+  /* Token Card Styles */
+  .token-card {
+    background-color: var(--color-card);
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+    transition: all 0.3s var(--ease-out);
+  }
+
+  .token-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+  }
+
+  .token-card-image {
+    position: relative;
+  }
+
+  .token-card-image::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(to top, var(--color-card), transparent);
+    opacity: 0.7;
+    z-index: 1;
+  }
+
+  /* Token Hero Section */
+  .token-hero-section {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklab, var(--color-border) 60%, transparent);
+  }
+
+  .token-hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, color-mix(in oklab, var(--color-primary) 30%, transparent), transparent 60%);
+    opacity: 0.4;
+    z-index: 0;
+  }
+
+  .token-hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Token Create Button */
+  .token-create-button {
+    background: linear-gradient(to right, var(--color-primary), color-mix(in oklab, var(--color-primary) 70%, white));
+    box-shadow: 0 5px 20px color-mix(in oklab, var(--color-primary) 40%, transparent);
+    transition: all 0.3s var(--ease-bounce);
+  }
+
+  .token-create-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px color-mix(in oklab, var(--color-primary) 50%, transparent);
+  }
+
+  .token-create-button:active {
+    transform: translateY(1px);
+  }
+
+  /* Token Latest Grid */
+  .token-latest-grid {
+    position: relative;
+  }
+
+  .token-latest-card {
+    transition: all 0.3s ease-out;
+  }
+
+  .token-latest-card:hover {
+    z-index: 2;
+  }
+
+  /* Token Step Cards */
+  .token-step-card {
+    transition: all 0.3s var(--ease-out);
+    border: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+  }
+
+  .token-step-card:hover {
+    transform: translateY(-5px);
+    border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Loading Animation */
+  .token-loading .animate-spin {
+    animation: token-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  }
+
+  @keyframes token-spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Custom Token Background Elements */
+  .token-trending-section {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .token-trending-section::before {
+    content: '';
+    position: absolute;
+    height: 300px;
+    width: 300px;
+    background: radial-gradient(circle, color-mix(in oklab, var(--color-primary) 20%, transparent), transparent 70%);
+    top: -150px;
+    right: -150px;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.3;
+    z-index: -1;
+  }
+
+  /* Token Stats Section */
+  .token-stats-section {
+    position: relative;
+    border-radius: 1rem;
+    overflow: hidden;
+  }
+
+  .token-stats-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom right, 
+                color-mix(in oklab, var(--color-primary) 5%, transparent),
+                transparent 70%);
+    z-index: -1;
+  }
+
+  /* Featured token styles */
+  .token-featured-section {
+    position: relative;
+  }
+
+  /* Media Queries */
+  @media (max-width: 768px) {
+    .token-hero-content h1 {
+      font-size: 2.5rem;
+    }
+    
+    .token-hero-content p {
+      font-size: 1rem;
+    }
+    
+    .token-create-button {
+      width: 100%;
+    }
+  }
+}
+
+/* Sound-specific animations */
+@keyframes pulse-sound {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+.token-pulse {
+  animation: pulse-sound 4s var(--ease-in-out) infinite;
+}
+
+/* Sound Wave Animation for trending tokens */
+.token-wave {
+  position: relative;
+  overflow: hidden;
+}
+
+.token-wave::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, 
+    var(--color-primary) 0%,
+    color-mix(in oklab, var(--color-primary) 70%, transparent) 50%,
+    var(--color-primary) 100%
+  );
+  opacity: 0.7;
+  animation: wave 2s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(20px);
+  }
+}

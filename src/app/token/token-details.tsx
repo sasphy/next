@@ -21,12 +21,12 @@ class AnchorProvider {
   constructor(public connection: Connection, public wallet: Wallet, public opts: any) {}
 }
 
-class SasphyTokenClient {
+class TokenClient {
   constructor(public connection: Connection, public wallet: Wallet, public programId: PublicKey) {}
 }
 
 // Constants
-const PROGRAM_ID = '5tGHM7n1mxNEqUxEGSgC2yobV11zVUPChZ8ECEQWTwRV';
+const PROGRAM_ID = 'A3hPb35qCY6eqdcgqSGKWKCUDKnE9uUrXPowyaRGguZK';
 
 // Bonding curve helper functions
 function describeBondingCurve(type: BondingCurveType): string {
@@ -47,7 +47,7 @@ function describeBondingCurve(type: BondingCurveType): string {
 export default function TokenDetails() {
   const [connection, setConnection] = useState<Connection | null>(null);
   const [provider, setProvider] = useState<AnchorProvider | null>(null);
-  const [client, setClient] = useState<SasphyTokenClient | null>(null);
+  const [client, setClient] = useState<TokenClient | null>(null);
   const [tokenInfo, setTokenInfo] = useState<any | null>(null);
   const [protocolInfo, setProtocolInfo] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -77,8 +77,8 @@ export default function TokenDetails() {
           preflightCommitment: 'confirmed',
         });
         
-        // Create SasphyTokenClient
-        const tokenClient = new SasphyTokenClient(
+        // Create TokenClient
+        const tokenClient = new TokenClient(
           conn,
           walletAdapter,
           new PublicKey(PROGRAM_ID)

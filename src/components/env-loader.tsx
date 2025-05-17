@@ -22,14 +22,14 @@ export default function EnvLoader() {
         API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3099',
         STORAGE_URL: process.env.NEXT_PUBLIC_MINIO_URL || 'http://localhost:9000',
         FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3088',
-        FACTORY_ADDRESS: process.env.NEXT_PUBLIC_FACTORY_ADDRESS || '5tGHM7n1mxNEqUxEGSgC2yobV11zVUPChZ8ECEQWTwRV',
+        FACTORY_ADDRESS: process.env.NEXT_PUBLIC_FACTORY_ADDRESS || 'A3hPb35qCY6eqdcgqSGKWKCUDKnE9uUrXPowyaRGguZK',
         CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL || 'https://quiet-ram-327.convex.cloud',
         GATEWAY_URL: process.env.NEXT_PUBLIC_GATEWAY_URL || 'indigo-leading-rabbit-443.mypinata.cloud',
-        SOLANA_NETWORK: process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'Solana Devnet',
-        SOLANA_PROGRAM_ID: process.env.NEXT_PUBLIC_SOLANA_PROGRAM_ID || '5tGHM7n1mxNEqUxEGSgC2yobV11zVUPChZ8ECEQWTwRV',
-        SOLANA_ADMIN_WALLET: process.env.NEXT_PUBLIC_SOLANA_ADMIN_WALLET || '63xvdhigaoS5rUxiqDzvRPBTLBbRXezX1dYm3nMvXri6',
-        SOLANA_TREASURY_ADDRESS: process.env.NEXT_PUBLIC_SOLANA_TREASURY_ADDRESS || '9RgXRzRWMAvfjunEUK8QCJ5WGs8oVreTfXtVyAvABVBb',
-        SOLANA_PROTOCOL_PDA: process.env.NEXT_PUBLIC_SOLANA_PROTOCOL_PDA || 'Protocol_PDA_5tGHM7n1',
+        SOLANA_NETWORK: process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet',
+        SOLANA_PROGRAM_ID: process.env.NEXT_PUBLIC_SOLANA_PROGRAM_ID || 'A3hPb35qCY6eqdcgqSGKWKCUDKnE9uUrXPowyaRGguZK',
+        SOLANA_ADMIN_WALLET: process.env.NEXT_PUBLIC_SOLANA_ADMIN_WALLET || '7vCWanYCd848kSEqEbZUuamhgFhnKqDh4b2TC1fVEGg9',
+        SOLANA_TREASURY_ADDRESS: process.env.NEXT_PUBLIC_SOLANA_TREASURY_ADDRESS || 'FXHUWiWF2QcjnZ9qCkxrzKpjuwzgr3e8acCPV4sKPRSV',
+        SOLANA_PROTOCOL_PDA: process.env.NEXT_PUBLIC_SOLANA_PROTOCOL_PDA || '4VGsLuKatfBkEm8bSH6uKnWagXBx9QfxeGxuih6oN2sM',
         IS_DEV: process.env.NODE_ENV === 'development'
       };
     } 

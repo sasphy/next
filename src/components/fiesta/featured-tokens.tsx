@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Track } from '@/lib/types';
 import TokenizedTrackCard from './tokenized-track-card';
 import { TrendingUp, Filter, ChevronRight } from 'lucide-react';

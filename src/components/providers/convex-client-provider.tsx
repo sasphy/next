@@ -69,8 +69,8 @@ function EnvWarning() {
               Your app is missing critical environment variables. Please check your .env.local file and add the following:
             </p>
             <div className="bg-gray-900 p-4 rounded-md text-sm font-mono mb-4 overflow-auto">
-              {!env.convexUrl && !windowConvexUrl && <div className="text-yellow-400">NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud</div>}
-              {!env.factoryAddress && !windowFactoryAddress && <div className="text-yellow-400">NEXT_PUBLIC_FACTORY_ADDRESS=0x5tGHM7n1mxNEqUxEGSgC2yobV11zVUPChZ8ECEQWTwRV</div>}
+              {!env.convexUrl && !windowConvexUrl && <div className="text-yellow-400">NEXT_PUBLIC_CONVEX_URL=quiet-ram-327.convex.cloud</div>}
+              {!env.factoryAddress && !windowFactoryAddress && <div className="text-yellow-400">NEXT_PUBLIC_FACTORY_ADDRESS=A3hPb35qCY6eqdcgqSGKWKCUDKnE9uUrXPowyaRGguZK</div>}
             </div>
             <p className="text-sm text-gray-300 mb-4">
               After adding these variables, restart your development server.

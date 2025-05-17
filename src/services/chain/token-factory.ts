@@ -2,10 +2,12 @@ import { Connection, PublicKey, Transaction, sendAndConfirmTransaction } from '@
 import { Program, AnchorProvider, Wallet, BN } from '@project-serum/anchor';
 import { IDL } from '@/lib/idls/music_token_factory';
 import { BondingCurveType } from '@/lib/types';
+import * as anchor from '@project-serum/anchor';
+import axios from 'axios';
 
 // Constants
-export const PROGRAM_ID = new PublicKey('5tGHM7n1mxNEqUxEGSgC2yobV11zVUPChZ8ECEQWTwRV');
-export const TREASURY_ADDRESS = new PublicKey('9RgXRzRWMAvfjunEUK8QCJ5WGs8oVreTfXtVyAvABVBb');
+export const PROGRAM_ID = new PublicKey('A3hPb35qCY6eqdcgqSGKWKCUDKnE9uUrXPowyaRGguZK');
+export const TREASURY_ADDRESS = new PublicKey('FXHUWiWF2QcjnZ9qCkxrzKpjuwzgr3e8acCPV4sKPRSV');
 
 // Convert bonding curve type to the enum values expected by the program
 function getBondingCurveTypeEnum(curveType: BondingCurveType): number {
