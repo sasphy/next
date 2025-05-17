@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest, { params }: { params: { width: string, height: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ width: string; height: string }> }
+) {
   // Create a simple SVG with the specified dimensions
-  const width = params.width || '500';
-  const height = params.height || '500';
+  const { width, height } = await params;
   
   const svg = `
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" 

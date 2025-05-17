@@ -77,6 +77,7 @@ export function useIPFSTrack() {
         finalPrice,
         maxSupply,
         curveType,
+        delta: "0.1", // Added the missing delta field
         created_at: new Date().toISOString()
       };
       
@@ -104,7 +105,24 @@ export function useIPFSTrack() {
    */
   const getTrackMetadata = async (metadataUrl: string): Promise<TrackMetadata> => {
     try {
-      return await getMetadataFromIPFS(metadataUrl);
+      const ipfsMetadata = await getMetadataFromIPFS(metadataUrl);
+      
+      // Transform data from IPFS metadata format to TrackMetadata format
+      const trackMetadata: TrackMetadata = {
+        name: ipfsMetadata.name,
+        description: ipfsMetadata.description,
+        image: ipfsMetadata.image || '',
+        animation_url: ipfsMetadata.audio || '',
+        external_url: '',
+        artist: ipfsMetadata.artist,
+        attributes: ipfsMetadata.attributes || [],
+        properties: ipfsMetadata.properties || {
+          files: [],
+          category: 'audio'
+        }
+      };
+      
+      return trackMetadata;
     } catch (error) {
       setUploadError(`Error fetching metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;

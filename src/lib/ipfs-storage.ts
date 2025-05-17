@@ -13,8 +13,10 @@ interface MetadataObject {
   genre: string;
   artist: string;
   artistAddress: string;
-  initialPrice: string;
-  curveType: string;
+  initialPrice?: string;
+  finalPrice?: string;
+  maxSupply?: string;
+  curveType?: string;
   delta: string;
   image?: string;
   animation_url?: string;
@@ -44,6 +46,22 @@ interface TrackMetadata {
   finalPrice?: string;
   maxSupply?: string;
   curveType?: string;
+  attributes: Array<{
+    trait_type: string;
+    value: string;
+  }>;
+  properties: {
+    files: Array<{
+      uri: string;
+      type: string;
+      cdn?: boolean;
+    }>;
+    category?: string;
+    creators?: Array<{
+      address: string;
+      share: number;
+    }>;
+  };
   [key: string]: unknown;
 }
 
@@ -289,7 +307,7 @@ export const getMetadataFromIPFS = async (metadataUrl: string): Promise<TrackMet
         const data = await response.json();
         console.log('Successfully fetched metadata with fixed URL');
         
-        return data as TrackMetadata;
+        return enhanceMetadata(data);
       } catch (innerError) {
         console.error('Failed to fix URL:', innerError);
         throw new Error(`Invalid URL format: ${gatewayUrl}`);
@@ -312,25 +330,54 @@ export const getMetadataFromIPFS = async (metadataUrl: string): Promise<TrackMet
     const data = await response.json();
     console.log('Successfully fetched metadata:', data);
     
-    // Validate and ensure required fields
-    const metadata: TrackMetadata = {
-      name: data.name || 'Unknown Track',
-      symbol: data.symbol || 'TRACK',
-      description: data.description || '',
-      genre: data.genre || 'Unknown',
-      artist: data.artist || 'Unknown Artist',
-      artistAddress: data.artistAddress || '0x0000000000000000000000000000000000000000',
-      audio: data.audio || '',
-      image: data.image || '',
-      created_at: data.created_at || new Date().toISOString(),
-      ...data
-    };
-    
-    return metadata;
+    return enhanceMetadata(data);
   } catch (error) {
     console.error('Error fetching metadata from IPFS:', error);
     throw new Error('Failed to fetch metadata from IPFS');
   }
+};
+
+// Helper function to ensure the metadata has all required fields
+const enhanceMetadata = (data: any): TrackMetadata => {
+  // Validate and ensure required fields
+  const metadata: TrackMetadata = {
+    name: data.name || 'Unknown Track',
+    symbol: data.symbol || 'TRACK',
+    description: data.description || '',
+    genre: data.genre || 'Unknown',
+    artist: data.artist || 'Unknown Artist',
+    artistAddress: data.artistAddress || '0x0000000000000000000000000000000000000000',
+    audio: data.audio || '',
+    image: data.image || '',
+    created_at: data.created_at || new Date().toISOString(),
+    // Add required fields that might be missing
+    attributes: data.attributes || [
+      { trait_type: 'Genre', value: data.genre || 'Unknown' },
+      { trait_type: 'Artist', value: data.artist || 'Unknown Artist' }
+    ],
+    properties: data.properties || {
+      files: [
+        {
+          uri: data.audio || data.animation_url || '',
+          type: 'audio/mp3'
+        },
+        {
+          uri: data.image || '',
+          type: 'image/png'
+        }
+      ],
+      category: 'music',
+      creators: data.artistAddress ? [
+        {
+          address: data.artistAddress,
+          share: 100
+        }
+      ] : undefined
+    },
+    ...data
+  };
+  
+  return metadata;
 };
 
 /**
@@ -359,21 +406,7 @@ export const getMetadataFromIPFSProxy = async (ipfsUri: string): Promise<TrackMe
     const data = await response.json();
     console.log('Successfully fetched metadata via proxy');
     
-    // Validate and ensure required fields
-    const metadata: TrackMetadata = {
-      name: data.name || 'Unknown Track',
-      symbol: data.symbol || 'TRACK',
-      description: data.description || '',
-      genre: data.genre || 'Unknown',
-      artist: data.artist || 'Unknown Artist',
-      artistAddress: data.artistAddress || '0x0000000000000000000000000000000000000000',
-      audio: data.audio || '',
-      image: data.image || '',
-      created_at: data.created_at || new Date().toISOString(),
-      ...data
-    };
-    
-    return metadata;
+    return enhanceMetadata(data);
   } catch (error) {
     console.error('Error fetching metadata from IPFS via proxy:', error);
     throw new Error('Failed to fetch metadata from IPFS');

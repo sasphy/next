@@ -4,6 +4,31 @@ export type PlaylistType = 'discover' | 'trending' | 'favorites' | 'recent' | 'c
 
 export type BondingCurveType = 'LINEAR' | 'EXPONENTIAL' | 'LOGARITHMIC' | 'SIGMOID';
 
+export interface TrackMetadata {
+  name: string;
+  description: string;
+  image: string;
+  animation_url?: string;
+  external_url?: string;
+  artist: string;
+  attributes: Array<{
+    trait_type: string;
+    value: string;
+  }>;
+  properties: {
+    files: Array<{
+      uri: string;
+      type: string;
+      cdn?: boolean;
+    }>;
+    category?: string;
+    creators?: Array<{
+      address: string;
+      share: number;
+    }>;
+  };
+}
+
 export interface Track {
   id: string;
   title: string;

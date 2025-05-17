@@ -7,6 +7,12 @@ const sasphyApi = solanaApi; // Solana blockchain API
  * Initialize all API clients
  */
 export function initializeApiClients() {
+  // Get blockchain API URL from environment
+  const blockchainApiUrl = process.env.NEXT_PUBLIC_BLOCKCHAIN_API_URL || 'http://localhost:3099';
+  
+  // Set the base URL for the Solana API
+  solanaApi.baseUrl = blockchainApiUrl;
+  
   // Initialize tokens from localStorage if available
   if (typeof window !== 'undefined') {
     sasphyApi.initToken();

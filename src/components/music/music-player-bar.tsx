@@ -45,7 +45,7 @@ const MusicPlayerBar = () => {
               )}
               <div>
                 <h4 className="text-white font-medium text-sm line-clamp-1">{currentTrack.title}</h4>
-                <p className="text-purple-300 text-xs">{currentTrack.artist}</p>
+                <p className="text-purple-300 text-xs">{typeof currentTrack.artist === 'string' ? currentTrack.artist : currentTrack.artist.name}</p>
               </div>
             </div>
             
@@ -118,7 +118,7 @@ const MusicPlayerBar = () => {
             <WaveformPlayer
               audioUrl={currentTrack.fullAudioUrl || currentTrack.previewUrl || ''}
               title={currentTrack.title}
-              artist={currentTrack.artist}
+              artist={typeof currentTrack.artist === 'string' ? currentTrack.artist : currentTrack.artist.name}
               coverArt={currentTrack.coverImage}
               autoPlay={isPlaying}
               onEnded={handleTrackEnd}

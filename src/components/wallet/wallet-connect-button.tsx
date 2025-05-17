@@ -4,7 +4,7 @@ import { FC, useEffect, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
-import { truncateAddress } from '@/lib/utils';
+import { PublicKey } from '@solana/web3.js';
 
 // Import Solana wallet adapter styles
 require('@solana/wallet-adapter-react-ui/styles.css');
@@ -12,18 +12,53 @@ require('@solana/wallet-adapter-react-ui/styles.css');
 const WalletConnectButton: FC = () => {
   // Use a state to track client-side rendering
   const [mounted, setMounted] = useState(false);
-  const { publicKey, connecting, disconnecting } = useWallet();
+  
+  // Use a safe access pattern to avoid errors during hydration
+  const wallet = useWallet();
+  const [walletState, setWalletState] = useState({
+    connected: false,
+    connecting: false,
+    disconnecting: false,
+    publicKey: null as PublicKey | null
+  });
 
   // Set mounted to true after component mounts to ensure we're on the client
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Update wallet state safely after hydration
+  useEffect(() => {
+    if (mounted && wallet) {
+      setWalletState({
+        connected: wallet.connected || false,
+        connecting: wallet.connecting || false,
+        disconnecting: wallet.disconnecting || false,
+        publicKey: wallet.publicKey
+      });
+
+      // Log wallet state for debugging
+      console.log('Wallet state:', { 
+        connected: wallet.connected, 
+        connecting: wallet.connecting, 
+        disconnecting: wallet.disconnecting, 
+        publicKey: wallet.publicKey?.toString() 
+      });
+    }
+  }, [
+    mounted, 
+    wallet, 
+    wallet?.connected, 
+    wallet?.connecting, 
+    wallet?.disconnecting, 
+    wallet?.publicKey
+  ]);
+
   // If not mounted yet (server-side), render a placeholder button
   if (!mounted) {
     return (
       <div className="wallet-button-wrapper">
-        <Button className="custom-wallet-button">
+        <Button className="custom-wallet-button bg-primary hover:bg-primary/90 text-primary-foreground py-1.5 h-10 rounded-lg font-medium transition-colors">
           Connect Wallet
         </Button>
       </div>
@@ -32,8 +67,12 @@ const WalletConnectButton: FC = () => {
 
   // Custom styles for the wallet button
   return (
-    <div className="wallet-button-wrapper">
-      <WalletMultiButton className="custom-wallet-button !bg-primary hover:!bg-primary/90 !text-primary-foreground !py-1.5 !h-auto !min-w-0 !rounded-lg !font-medium !transition-colors" />
+    <div 
+      className="wallet-button-wrapper relative" 
+      data-mounted={mounted} 
+      data-connected={walletState.connected}
+    >
+      <WalletMultiButton className="custom-wallet-button !bg-primary hover:!bg-primary/90 !text-primary-foreground !py-1.5 !h-10 !rounded-lg !font-medium !transition-colors" />
       
       {/* Custom styles will be applied in globals.css */}
       <style jsx global>{`
@@ -61,6 +100,12 @@ const WalletConnectButton: FC = () => {
           backdrop-filter: blur(10px) !important;
           border-radius: 16px !important;
           border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          z-index: 999999 !important;
         }
         
         .wallet-adapter-modal-button-close {
@@ -69,9 +114,14 @@ const WalletConnectButton: FC = () => {
         
         /* Fix for hydration issues */
         .wallet-adapter-button-start-icon {
-          display: flex;
-          align-items: center;
-          margin-right: 8px;
+          display: flex !important;
+          align-items: center !important;
+          margin-right: 8px !important;
+        }
+
+        /* Ensure the modal appears on top of everything */
+        .wallet-adapter-modal {
+          z-index: 999999 !important;
         }
       `}</style>
     </div>

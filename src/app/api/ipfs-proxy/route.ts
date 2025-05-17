@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import env from '@/lib/env';
-import { getIPFSGatewayUrl } from '@/lib/ipfs-storage';
+import { getIpfsGatewayUrl } from '@/lib/ipfs-storage';
 
 /**
  * IPFS Proxy API Route
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   
   try {
     // Convert IPFS URL or CID to a gateway URL
-    const gatewayUrl = getIPFSGatewayUrl(cid);
+    const gatewayUrl = getIpfsGatewayUrl(cid);
     
     // Fetch the content from the gateway
     const response = await fetch(gatewayUrl, {

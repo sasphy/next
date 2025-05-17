@@ -194,6 +194,7 @@ const TrackCard = ({ track, onClick }: { track: Track; onClick: () => void }) =>
           <button
             onClick={handlePlayClick}
             className="absolute inset-0 w-full h-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+            aria-label="Play track"
           >
             <div className="bg-purple-600 rounded-full p-3 transform hover:scale-110 transition-transform shadow-lg">
               <Headphones size={24} className="text-white" />
@@ -203,7 +204,7 @@ const TrackCard = ({ track, onClick }: { track: Track; onClick: () => void }) =>
         
         <div className="p-4">
           <h3 className="text-white font-semibold truncate">{track.title}</h3>
-          <p className="text-purple-300 text-sm truncate">{track.artist}</p>
+          <p className="text-purple-300 text-sm truncate">{typeof track.artist === 'string' ? track.artist : track.artist.name}</p>
           
           <div className="mt-3 flex justify-between items-center">
             <div className="flex items-center text-sm text-purple-200 font-medium">
@@ -271,6 +272,7 @@ const SwipeCard = ({ track, onPlay, currentlyPlaying }: { track: Track; onPlay: 
             onPlay();
           }}
           className="absolute bottom-4 right-4 bg-purple-600 hover:bg-purple-700 rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all hover:scale-105 z-20"
+          aria-label={currentlyPlaying ? "Pause track" : "Play track"}
         >
           {currentlyPlaying ? (
             <Pause className="w-5 h-5 text-white" />
@@ -283,7 +285,7 @@ const SwipeCard = ({ track, onPlay, currentlyPlaying }: { track: Track; onPlay: 
       <div className="p-5 flex-grow flex flex-col justify-between z-10">
         <div>
           <h3 className="text-xl text-white font-bold truncate">{track.title}</h3>
-          <p className="text-purple-300 mb-2 truncate">{track.artist}</p>
+          <p className="text-purple-300 mb-2 truncate">{typeof track.artist === 'string' ? track.artist : track.artist.name}</p>
           
           <div className="flex gap-2 flex-wrap mt-3 mb-4">
             {track.tags?.map((tag) => (
@@ -306,10 +308,10 @@ const SwipeCard = ({ track, onPlay, currentlyPlaying }: { track: Track; onPlay: 
           </div>
           
           <div className="flex items-center gap-3 text-gray-400">
-            <button className="hover:text-white transition-colors">
+            <button className="hover:text-white transition-colors" aria-label="Like track">
               <Heart size={18} />
             </button>
-            <button className="hover:text-white transition-colors">
+            <button className="hover:text-white transition-colors" aria-label="Share track">
               <Share2 size={18} />
             </button>
             {track.mintAddress && (
@@ -360,11 +362,17 @@ const DiscoverPage = () => {
         setTracks(DUMMY_TRACKS);
         setFilteredTracks(DUMMY_TRACKS);
         
-        // If wallet is connected and Metaplex is ready, try to fetch real NFTs
-        if (connected && isReady) {
-          const nfts = await fetchNFTsByOwner();
-          console.log('Fetched NFTs:', nfts);
-          // TODO: Convert NFTs to Track format
+        // Use try-catch to handle any wallet-related errors
+        try {
+          // If wallet is connected and Metaplex is ready, try to fetch real NFTs
+          if (connected && isReady) {
+            const nfts = await fetchNFTsByOwner();
+            console.log('Fetched NFTs:', nfts);
+            // TODO: Convert NFTs to Track format
+          }
+        } catch (walletError) {
+          console.error('Wallet error:', walletError);
+          // Don't show error toast for wallet issues
         }
       } catch (error) {
         console.error('Error loading tracks:', error);
@@ -374,7 +382,10 @@ const DiscoverPage = () => {
       }
     };
     
-    loadTracks();
+    // Added client-side only check to prevent SSR issues
+    if (typeof window !== 'undefined') {
+      loadTracks();
+    }
   }, [connected, isReady, fetchNFTsByOwner]);
   
   // Filter and sort tracks
@@ -387,7 +398,9 @@ const DiscoverPage = () => {
       result = result.filter(
         track => 
           track.title.toLowerCase().includes(query) || 
-          track.artist.toLowerCase().includes(query) ||
+          (typeof track.artist === 'string' 
+            ? track.artist.toLowerCase().includes(query) 
+            : track.artist.name.toLowerCase().includes(query)) ||
           (track.description && track.description.toLowerCase().includes(query))
       );
     }
@@ -565,6 +578,7 @@ const DiscoverPage = () => {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'recent' | 'trending' | 'price')}
                 className="bg-black/30 border border-purple-900/30 rounded-lg px-3 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                aria-label="Sort tracks by"
               >
                 <option value="recent">Recent</option>
                 <option value="trending">Trending</option>

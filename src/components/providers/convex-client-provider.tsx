@@ -4,16 +4,7 @@ import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { ReactNode, useMemo, useState, useEffect } from "react";
 import env from "@/lib/env";
 
-// Add ENV type to global Window interface
-declare global {
-  interface Window {
-    ENV?: {
-      CONVEX_URL?: string;
-      FACTORY_ADDRESS?: string;
-      [key: string]: string | undefined;
-    }
-  }
-}
+// ENV type is already defined in src/types/global.d.ts
 
 function EnvWarning() {
   const [dismissed, setDismissed] = useState(false);

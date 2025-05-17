@@ -220,7 +220,7 @@ const CreateMusicNFTPage = () => {
     setIsLoading(true);
     
     try {
-      // Create NFT metadata
+  // Create NFT metadata
       const metadata = {
         name: title,
         symbol: symbol.toUpperCase().substring(0, 10),
@@ -239,19 +239,20 @@ const CreateMusicNFTPage = () => {
           },
           {
             trait_type: 'Price',
-            value: price
+            value: price.toString()  // Convert number to string
           },
           ...genres.map(genre => ({
             trait_type: 'Genre',
             value: genre
           }))
         ],
+        // Only add creators if we have a wallet address
         creators: walletAddress ? [
           {
             address: new PublicKey(walletAddress),
             share: 100
           }
-        ] : undefined
+        ] : []
       };
       
       // Create NFT
@@ -326,6 +327,7 @@ const CreateMusicNFTPage = () => {
                           <button 
                             type="button"
                             className="bg-red-600 rounded-full p-2"
+                            aria-label="Remove cover image"
                             onClick={(e) => {
                               e.stopPropagation();
                               setCoverImage(null);
@@ -352,6 +354,8 @@ const CreateMusicNFTPage = () => {
                       className="hidden"
                       ref={coverImageInputRef}
                       onChange={handleCoverImageChange}
+                      aria-label="Upload cover image"
+                      id="cover-image-upload"
                     />
                   </div>
                 </div>
@@ -492,6 +496,8 @@ const CreateMusicNFTPage = () => {
                       ref={audioFileInputRef}
                       onChange={handleAudioFileChange}
                       required
+                      aria-label="Upload audio file"
+                      id="audio-file-upload"
                     />
                   </div>
                   

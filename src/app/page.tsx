@@ -6,6 +6,9 @@ import { Track } from '@/lib/types';
 import { toast } from 'sonner';
 import debugEnvironmentVariables from '@/lib/debug-env';
 import { reloadClientEnv } from '@/lib/reload-env';
+import { useQuery } from 'convex/react';
+import { api } from '@/../../convex/_generated/api';
+import env from '@/lib/env';
 
 // Import Fiesta components
 import FiestaHero from '@/components/fiesta/fiesta-hero';
@@ -19,6 +22,12 @@ export default function HomePage() {
   const [featuredTokens, setFeaturedTokens] = useState<Track[]>([]);
   const [trendingTokens, setTrendingTokens] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Get the current network from environment
+  const network = env.solanaNetwork?.toLowerCase() || 'devnet';
+  
+  // Fetch deployments from Convex
+  const deployments = useQuery(api.tokens.getAllDeployments, { network, limit: 50 }) || [];
 
   // Fetch tracks on component mount
   useEffect(() => {
@@ -34,39 +43,82 @@ export default function HomePage() {
     const loadTracks = async () => {
       setIsLoading(true);
       try {
-        const allTracks = await fetchTracks();
-        
-        if (allTracks && allTracks.length > 0) {
-          // Convert regular tracks to tokenized tracks with mock data
-          const tokenized = allTracks.map(track => ({
-            ...track,
+        // If we have deployments from Convex, use those as the primary data source
+        if (deployments && deployments.length > 0) {
+          console.log(`Loaded ${deployments.length} deployments from Convex`);
+          
+          // Convert deployments to Track objects
+          const convertedTracks: Track[] = deployments.map(deployment => ({
+            id: deployment.tokenAddress,
+            title: deployment.title,
+            artist: { id: deployment.walletAddress, name: deployment.artist },
+            coverArt: deployment.imageUrl,
+            duration: 180, // default value
+            genre: "Music",
+            price: deployment.initialPrice.toString(),
+            releaseDate: new Date().toISOString(), // Use current time as fallback
+            tokenId: parseInt(deployment.tokenAddress.slice(-4), 16) || Math.floor(Math.random() * 10000),
+            shortAudioUrl: deployment.audioUrl,
+            fullAudioUrl: deployment.audioUrl,
             tokenized: true,
-            initialPrice: parseFloat(typeof track.price === 'string' ? track.price : '0.1') || 0.1,
-            currentPrice: parseFloat(typeof track.price === 'string' ? track.price : '0.1') * (1 + Math.random() * 0.5),
+            initialPrice: deployment.initialPrice,
+            currentPrice: deployment.initialPrice * (1 + Math.random() * 0.5),
             totalSupply: Math.floor(Math.random() * 1000) + 100,
             holders: Math.floor(Math.random() * 100) + 10,
             bondingCurve: {
-              curveType: ['LINEAR', 'EXPONENTIAL', 'LOGARITHMIC', 'SIGMOID'][Math.floor(Math.random() * 4)] as any,
-              delta: 0.01 + Math.random() * 0.05,
+              curveType: deployment.curveType as any,
+              delta: deployment.delta,
               initialSupply: 10,
               maxSupply: Math.floor(Math.random() * 1000) + 500
+            },
+            metadata: {
+              metadataUrl: deployment.metadataUrl
             }
           }));
           
           // Set all tokenized tracks
-          setTokenizedTracks(tokenized);
+          setTokenizedTracks(convertedTracks);
           
-          // Sort for featured tokens (most expensive)
-          const featured = [...tokenized].sort((a, b) => {
-            return (b.currentPrice || 0) - (a.currentPrice || 0);
-          }).slice(0, 5);
+          // Sort for featured tokens (randomly for now since we don't have reliable date info)
+          const featured = [...convertedTracks].sort(() => Math.random() - 0.5).slice(0, 5);
           setFeaturedTokens(featured);
           
-          // Sort for trending tokens (most holders)
-          const trending = [...tokenized].sort((a, b) => {
-            return (b.holders || 0) - (a.holders || 0);
-          }).slice(0, 10);
+          // Sort for trending tokens (random for now, could be based on holders)
+          const trending = [...convertedTracks].sort(() => Math.random() - 0.5).slice(0, 10);
           setTrendingTokens(trending);
+        }
+        // Fallback to API if no deployments from Convex
+        else {
+          const allTracks = await fetchTracks();
+          
+          if (allTracks && allTracks.length > 0) {
+            // Convert regular tracks to tokenized tracks with mock data
+            const tokenized = allTracks.map(track => ({
+              ...track,
+              tokenized: true,
+              initialPrice: parseFloat(typeof track.price === 'string' ? track.price : '0.1') || 0.1,
+              currentPrice: parseFloat(typeof track.price === 'string' ? track.price : '0.1') * (1 + Math.random() * 0.5),
+              totalSupply: Math.floor(Math.random() * 1000) + 100,
+              holders: Math.floor(Math.random() * 100) + 10,
+              bondingCurve: {
+                curveType: ['LINEAR', 'EXPONENTIAL', 'LOGARITHMIC', 'SIGMOID'][Math.floor(Math.random() * 4)] as any,
+                delta: 0.01 + Math.random() * 0.05,
+                initialSupply: 10,
+                maxSupply: Math.floor(Math.random() * 1000) + 500
+              }
+            }));
+            
+            // Set all tokenized tracks
+            setTokenizedTracks(tokenized);
+            
+            // Sort for featured tokens (randomly for now since we don't have reliable date info)
+            const featured = [...tokenized].sort(() => Math.random() - 0.5).slice(0, 5);
+            setFeaturedTokens(featured);
+            
+            // Sort for trending tokens (random for now, could be based on holders)
+            const trending = [...tokenized].sort(() => Math.random() - 0.5).slice(0, 10);
+            setTrendingTokens(trending);
+          }
         }
       } catch (error) {
         console.error('Error loading tracks:', error);
@@ -77,7 +129,7 @@ export default function HomePage() {
     };
 
     loadTracks();
-  }, [fetchTracks]);
+  }, [fetchTracks, deployments]);
 
   return (
     <div className="space-y-16 pb-16">
@@ -100,7 +152,7 @@ export default function HomePage() {
           <FeaturedTokens 
             tokens={featuredTokens} 
             title="Featured Music Tokens"
-            subtitle="Tokenized tracks with the most potential"
+            subtitle={`Tokenized tracks on ${network.charAt(0).toUpperCase() + network.slice(1)}`}
             viewAllLink="/token/featured"
           />
         ) : (

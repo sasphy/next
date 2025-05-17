@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 interface MusicNFTCardProps {
   id: string;
   title: string;
-  artist: string;
+  artist: string | { id: string; name: string };
   imageUrl: string;
   audioPreviewUrl: string;
   price: number;
@@ -60,8 +60,8 @@ const MusicNFTCard = ({
   const handleShareClick = () => {
     if (navigator.share) {
       navigator.share({
-        title: `${title} by ${artist}`,
-        text: `Check out "${title}" by ${artist} on Sasphy`,
+        title: `${title} by ${typeof artist === 'string' ? artist : artist.name}`,
+        text: `Check out "${title}" by ${typeof artist === 'string' ? artist : artist.name} on Sasphy`,
         url: `https://sasphy.app/track/${id}`,
       }).catch(err => {
         console.error('Error sharing:', err);
@@ -127,7 +127,7 @@ const MusicNFTCard = ({
         <div className="flex justify-between items-start mb-2">
           <div>
             <h3 className="font-bold text-white line-clamp-1">{title}</h3>
-            <p className="text-sm text-purple-300">{artist}</p>
+            <p className="text-sm text-purple-300">{typeof artist === 'string' ? artist : artist.name}</p>
           </div>
           <div className="flex items-center space-x-1">
             <Button

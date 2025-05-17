@@ -10,6 +10,7 @@ import MainNavigation from "@/components/main-navigation";
 import ConvexClientProvider from "@/components/providers/convex-client-provider";
 import ConvexAuthProvider from "@/components/providers/convex-auth-provider";
 import EnvLoader from "@/components/env-loader";
+import SystemDebug from "@/components/system-debug";
 
 // Environment variables for client
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4022';
@@ -96,6 +97,8 @@ export default function RootLayout({
                         <MainNavigation />
                       </header>
                       <main className="flex-1 w-full px-4 sm:px-6 py-6">
+                        {/* Show system debug in development */}
+                        {process.env.NODE_ENV !== 'production' && <SystemDebug />}
                         {children}
                       </main>
                       <MusicPlayerBar />

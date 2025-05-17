@@ -61,7 +61,7 @@ const TrackCard = ({ track, index }: { track: Track, index: number }) => {
       <Link href={`/tracks/${track.id}`} className="block">
         <div className="music-card-image overflow-hidden rounded-t-xl">
           <Image 
-            src={track.coverImage} 
+            src={track.coverImage || "/assets/album-1.jpg"} 
             alt={track.title} 
             width={400}
             height={400}
@@ -89,7 +89,7 @@ const TrackCard = ({ track, index }: { track: Track, index: number }) => {
         
         <div className="music-card-content z-10 relative">
           <h3 className="music-title">{track.title}</h3>
-          <p className="music-artist">{track.artist}</p>
+          <p className="music-artist">{typeof track.artist === 'string' ? track.artist : track.artist.name}</p>
           
           <div className="mt-3 flex justify-between items-center">
             <div className="flex items-center gap-3">

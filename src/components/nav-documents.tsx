@@ -42,12 +42,10 @@ export function NavDocuments({
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <a href={item.url}>
-                <item.icon />
-                <span>{item.name}</span>
-              </a>
-            </SidebarMenuButton>
+            <a href={item.url} className="sidebar-link hover:sidebar-link-hover inline-flex w-full items-center justify-start whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium text-foreground [a&]:no-underline [&[data-slot=sidebar-menu-button]]:rounded-md [&[data-slot=sidebar-menu-button]]:p-2">
+              <item.icon />
+              <span>{item.name}</span>
+            </a>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuAction

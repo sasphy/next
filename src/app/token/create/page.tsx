@@ -20,6 +20,7 @@ import { api } from '@/../../convex/_generated/api';
 import { Connection, clusterApiUrl } from '@solana/web3.js';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { createMusicToken } from '@/services/chain/token-factory';
+import './styles.css';
 
 // Simple form field component
 const FormField = ({ 
@@ -47,6 +48,7 @@ const saveTokenToConvex = async (tokenData: {
   audioUrl: string;
   imageUrl: string;
   walletAddress: string;
+  network: string;
 }) => {
   try {
     const saveToken = useMutation(api.tokens.saveToken);
@@ -61,6 +63,7 @@ const saveTokenToConvex = async (tokenData: {
       audioUrl: tokenData.audioUrl,
       imageUrl: tokenData.imageUrl,
       walletAddress: tokenData.walletAddress,
+      network: tokenData.network,
     });
     
     return tokenId;
@@ -103,6 +106,8 @@ export default function CreateTokenPage() {
   
   // Convex mutation to record token creation
   const saveTokenToConvex = useMutation(api.tokens.saveToken);
+  // Add mutation for updating token address
+  const updateTokenAddress = useMutation(api.tokens.updateTokenAddress);
 
   // Handle curve type change
   const handleCurveTypeChange = (newType: BondingCurveType) => {
@@ -167,6 +172,11 @@ export default function CreateTokenPage() {
       setUploadProgress(50);
       toast.success("Files uploaded to IPFS successfully");
       
+      // Get the current network from environment
+      const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK?.toLowerCase() || 'devnet';
+      let txHash = null;
+      let tokenAddress = null;
+      
       // 2. Store token data in Convex
       const savedToken = await saveTokenToConvex({
         title,
@@ -179,6 +189,7 @@ export default function CreateTokenPage() {
         audioUrl: ipfsResults.audioUrl,
         imageUrl: ipfsResults.imageUrl,
         walletAddress: wallet.publicKey.toString(),
+        network, // Pass the network to the Convex function
       });
       
       setUploadProgress(75);
@@ -186,10 +197,11 @@ export default function CreateTokenPage() {
       
       // 3. Create the token on Solana blockchain
       try {
-        toast.info("Creating token on Solana...");
+        toast.info(`Creating token on Solana ${network}...`);
         
-        // Initialize connection to Solana devnet
-        const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+        // Initialize connection to Solana devnet or mainnet based on environment
+        const cluster = network === 'mainnet' ? 'mainnet-beta' : 'devnet';
+        const connection = new Connection(clusterApiUrl(cluster), 'confirmed');
         
         if (!wallet.signTransaction) {
           throw new Error("Wallet cannot sign transactions");
@@ -220,7 +232,21 @@ export default function CreateTokenPage() {
           console.warn("Blockchain creation warning:", tokenResult.error);
           toast.warning("Created in database but blockchain creation failed - will retry later");
         } else {
-          toast.success("Token created successfully on Solana!");
+          // If successful, extract the token address from the result
+          // The signature might be used as txHash depending on the implementation
+          const signature = tokenResult.signature || '';
+          
+          // Update the token address in Convex if we have required data
+          if (signature && typeof savedToken.tokenId === 'string') {
+            await updateTokenAddress({
+              id: savedToken.tokenId,
+              tokenAddress: signature, // Using signature as token identifier
+              txHash: signature,
+              network,
+            });
+          }
+          
+          toast.success(`Token created successfully on Solana ${network.charAt(0).toUpperCase() + network.slice(1)}!`);
         }
       } catch (blockchainError) {
         console.error("Blockchain error:", blockchainError);
@@ -266,10 +292,10 @@ export default function CreateTokenPage() {
             
             {/* Line that represents progress */}
             <div 
-              className="absolute top-4 left-0 h-0.5 bg-primary transition-all duration-300" 
-              style={{
-                width: `${(currentStep - 1) * 33.33}%`
-              }}
+              className="absolute top-4 left-0 h-0.5 bg-primary transition-all duration-300 progress-bar" 
+              style={{ 
+                '--current-step': currentStep 
+              } as React.CSSProperties}
             ></div>
             
             {[1, 2, 3, 4].map(step => (
@@ -376,13 +402,14 @@ export default function CreateTokenPage() {
                       />
                       <button 
                         type="button"
+                        aria-label="Remove cover image"
                         onClick={() => {
                           setCoverImage(null);
                           setPreviewUrl('');
                         }}
-                        className="absolute -top-2 -right-2 bg-card rounded-full p-1"
+                        className="remove-button"
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg className="remove-button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M18 6 6 18"></path>
                           <path d="m6 6 12 12"></path>
                         </svg>
@@ -429,10 +456,11 @@ export default function CreateTokenPage() {
                         </div>
                         <button 
                           type="button"
+                          aria-label="Remove audio file"
                           onClick={() => setAudioFile(null)}
                           className="p-1"
                         >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg className="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M18 6 6 18"></path>
                             <path d="m6 6 12 12"></path>
                           </svg>
@@ -537,7 +565,7 @@ export default function CreateTokenPage() {
               
               <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mt-6">
                 <h3 className="text-sm font-medium flex items-center gap-2 mb-3">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="svg-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
                     <path d="M12 8v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     <circle cx="12" cy="16" r="1" fill="currentColor" />

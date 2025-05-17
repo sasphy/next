@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import SimplexNoise from 'simplex-noise';
+import { createNoise2D } from 'simplex-noise';
 
 export default function WaveBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,7 +24,7 @@ export default function WaveBackground() {
     window.addEventListener('resize', setCanvasSize);
     
     // Generate a simplex noise instance
-    const simplex = new SimplexNoise();
+    const noise2D = createNoise2D();
     
     // Animation variables
     let animationId: number;
@@ -57,8 +57,8 @@ export default function WaveBackground() {
         // Draw a smooth wave path
         for (let x = 0; x < canvas.width; x += 5) {
           const y = canvas.height / 2 + 
-                   amplitude * simplex.noise2D(x * frequency, time * speed) +
-                   amplitude / 2 * simplex.noise2D(x * frequency * 2, time * speed * 1.5);
+                   amplitude * noise2D(x * frequency, time * speed) +
+                   amplitude / 2 * noise2D(x * frequency * 2, time * speed * 1.5);
           
           ctx.lineTo(x, y);
         }

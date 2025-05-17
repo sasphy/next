@@ -96,7 +96,9 @@ const DiscoveryFeed = ({ tracks = MOCK_TRACKS, filter }: DiscoveryFeedProps) => 
     const filtered = tracks.filter(track => {
       const matchesSearch = 
         track.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        track.artist.toLowerCase().includes(searchQuery.toLowerCase());
+        (typeof track.artist === 'string' 
+          ? track.artist.toLowerCase().includes(searchQuery.toLowerCase())
+          : track.artist.name.toLowerCase().includes(searchQuery.toLowerCase()));
       
       if (selectedFilter === 'all') return matchesSearch;
       
@@ -184,8 +186,8 @@ const DiscoveryFeed = ({ tracks = MOCK_TRACKS, filter }: DiscoveryFeedProps) => 
               id={track.id}
               title={track.title}
               artist={track.artist}
-              imageUrl={track.coverImage}
-              audioPreviewUrl={track.previewUrl}
+              imageUrl={track.coverImage || "/assets/album-1.jpg"}
+              audioPreviewUrl={track.previewUrl || ""}
               price={parseFloat(track.price)}
               available={25} // Mock availability
               likes={Math.floor(Math.random() * 100)} // Mock likes

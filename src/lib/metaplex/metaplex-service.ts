@@ -3,7 +3,7 @@
 import { 
   Metaplex, 
   keypairIdentity, 
-  bundlrStorage, 
+  irysStorage, 
   walletAdapterIdentity,
   toMetaplexFile,
   CreatorInput,
@@ -23,8 +23,9 @@ export interface MusicNFTMetadata {
   externalUrl?: string;
   royalty?: number;
   attributes?: {
-    trait_type: string;
-    value: string | number;
+    trait_type?: string;
+    value?: string | number;
+    [key: string]: unknown;
   }[];
   sellerFeeBasisPoints?: number;
   creators?: CreatorInput[];
@@ -78,8 +79,24 @@ export class MetaplexService {
         audioUri = metadata.audioUrl;
       }
 
-      // Format traits/attributes
-      const formattedAttributes = metadata.attributes || [];
+      // Format traits/attributes with proper type handling
+      const formattedAttributes = (metadata.attributes || []).map(attr => {
+        // Handle optional or missing fields
+        const traitType = attr.trait_type || '';
+        let value = '';
+        
+        // Convert numbers to strings for Metaplex compatibility
+        if (attr.value !== undefined) {
+          value = typeof attr.value === 'number' 
+            ? String(attr.value) 
+            : String(attr.value || '');
+        }
+        
+        return {
+          trait_type: traitType,
+          value: value
+        };
+      });
       
       // Add audio specific attributes if audio is provided
       if (audioUri) {

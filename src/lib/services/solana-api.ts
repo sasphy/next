@@ -5,7 +5,11 @@ import {
   PurchaseResponse,
   StreamUrlResponse,
   TokenOwnership,
-  Track 
+  Track,
+  User,
+  Artist,
+  Playlist,
+  SearchResults
 } from '../types';
 
 /**
@@ -15,6 +19,14 @@ export class SolanaAPI {
   // Make baseUrl publicly accessible so it can be updated
   public baseUrl: string;
   private _token: string | null = null;
+  private _simulationMode: boolean = false; // Track if server is in simulation mode
+
+  /**
+   * Check if server is in simulation mode
+   */
+  get isSimulationMode(): boolean {
+    return this._simulationMode;
+  }
 
   /**
    * Check if user is authenticated
@@ -34,17 +46,46 @@ export class SolanaAPI {
     // Try to get baseUrl from various sources with fallbacks
     if (baseUrl) {
       this.baseUrl = baseUrl;
+    } else if (typeof window !== 'undefined' && window.ENV && window.ENV.BLOCKCHAIN_API_URL) {
+      this.baseUrl = window.ENV.BLOCKCHAIN_API_URL;
+    } else if (process.env.NEXT_PUBLIC_BLOCKCHAIN_API_URL) {
+      this.baseUrl = process.env.NEXT_PUBLIC_BLOCKCHAIN_API_URL;
     } else if (typeof window !== 'undefined' && window.ENV && window.ENV.API_URL) {
-      this.baseUrl = `${window.ENV.API_URL}/blockchain`;
+      this.baseUrl = window.ENV.API_URL;
     } else if (process.env.NEXT_PUBLIC_API_URL) {
-      this.baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/blockchain`;
+      this.baseUrl = process.env.NEXT_PUBLIC_API_URL;
     } else {
-      this.baseUrl = '/api/blockchain';
+      this.baseUrl = 'http://localhost:3099';
     }
     
     // Log the API URL for debugging
     if (typeof window !== 'undefined') {
       console.log(`SolanaAPI initialized with baseUrl: ${this.baseUrl}`);
+    }
+    
+    // Check server status to determine if we're in simulation mode
+    this.checkServerStatus();
+  }
+  
+  /**
+   * Check server status to determine if we're in simulation mode
+   */
+  async checkServerStatus(): Promise<void> {
+    try {
+      // Use the base URL without the /blockchain path for status checks
+      const statusUrl = this.baseUrl.replace(/\/blockchain$/, '');
+      console.log(`Checking server status at: ${statusUrl}/status`);
+      
+      const response = await fetch(`${statusUrl}/status`);
+      if (response.ok) {
+        const data = await response.json();
+        this._simulationMode = data.mode === 'simulation';
+        console.log(`Server running in ${this._simulationMode ? 'simulation' : 'production'} mode`);
+      }
+    } catch (error) {
+      console.error('Failed to check server status:', error);
+      // Default to simulation mode if status check fails
+      this._simulationMode = true;
     }
   }
 
@@ -107,38 +148,67 @@ export class SolanaAPI {
     if (this._token) {
       options.headers = {
         ...options.headers,
-        'Authorization': `Bearer ${this._token}`
+        'Authorization': `Bearer ${this._token}`,
+        'Content-Type': 'application/json'
+      };
+    } else if (!options.headers || !('Content-Type' in options.headers)) {
+      options.headers = {
+        ...options.headers,
+        'Content-Type': 'application/json'
       };
     }
     
     try {
+      console.log(`Requesting: ${url}`);
       const response = await fetch(url, options);
       
       // If the response is not ok, throw an error
       if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        let errorMessage = `API error: ${response.status} ${response.statusText}`;
+        
+        try {
+          // Try to parse error message from JSON response
+          const errorData = await response.json();
+          if (errorData.error || errorData.message) {
+            errorMessage = errorData.error || errorData.message;
+          }
+        } catch {
+          // Ignore parse errors for non-JSON responses
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
       
-      return data as APIResponse<T>;
+      // Check if we're in simulation mode
+      if (data.simulated !== undefined) {
+        this._simulationMode = data.simulated;
+      }
+      
+      // Return success response
+      return {
+        success: true,
+        data: data
+      } as APIResponse<T>;
     } catch (error) {
       console.error(`API request failed for ${url}:`, error);
       
       // Return a failed response
       return {
         success: false,
-        error: 'NetworkError',
+        error: error instanceof Error ? error.name : 'NetworkError',
         message: error instanceof Error ? error.message : 'Network request failed'
       } as APIResponse<T>;
     }
   }
 
   /**
-   * Get all tracks
+   * Get all tracks with optional filter
    */
-  async getTracks(): Promise<APIResponse<Track[]>> {
-    return this.request<Track[]>('/tracks');
+  async getTracks(filter?: string): Promise<APIResponse<Track[]>> {
+    const endpoint = filter ? `/tracks?filter=${encodeURIComponent(filter)}` : '/tracks';
+    return this.request<Track[]>(endpoint);
   }
 
   /**
@@ -261,14 +331,6 @@ export class SolanaAPI {
       method: 'DELETE',
       headers: this.getHeaders()
     });
-  }
-
-  /**
-   * Get tracks with optional filter
-   */
-  async getTracks(filter?: string): Promise<APIResponse<Track[]>> {
-    const endpoint = filter ? `/tracks?filter=${encodeURIComponent(filter)}` : '/tracks';
-    return this.request<Track[]>(endpoint);
   }
 
   /**

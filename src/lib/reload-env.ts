@@ -9,7 +9,21 @@ export function reloadClientEnv() {
   
   if (!window.ENV) {
     console.warn('window.ENV is not defined. Environment variables may not be properly loaded.');
-    window.ENV = {};
+    // Initialize with required fields
+    window.ENV = {
+      API_URL: process.env.NEXT_PUBLIC_API_URL || '',
+      STORAGE_URL: process.env.NEXT_PUBLIC_MINIO_URL || '',
+      FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL || '',
+      FACTORY_ADDRESS: process.env.NEXT_PUBLIC_FACTORY_ADDRESS || '',
+      CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL || '',
+      GATEWAY_URL: process.env.NEXT_PUBLIC_GATEWAY_URL || '',
+      SOLANA_NETWORK: process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet',
+      SOLANA_PROGRAM_ID: process.env.NEXT_PUBLIC_SOLANA_PROGRAM_ID || '',
+      SOLANA_ADMIN_WALLET: process.env.NEXT_PUBLIC_SOLANA_ADMIN_WALLET || '',
+      SOLANA_TREASURY_ADDRESS: process.env.NEXT_PUBLIC_SOLANA_TREASURY_ADDRESS || '',
+      SOLANA_PROTOCOL_PDA: process.env.NEXT_PUBLIC_SOLANA_PROTOCOL_PDA || '',
+      IS_DEV: process.env.NODE_ENV !== 'production'
+    };
     return;
   }
   

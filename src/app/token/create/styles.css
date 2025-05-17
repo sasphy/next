@@ -1,0 +1,25 @@
+/* Progress bar styles */
+.progress-bar {
+  width: calc((var(--current-step) - 1) * 33.33%);
+}
+
+/* SVG icon styles */
+.svg-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Removing and adjusting button style classes */
+.remove-button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: var(--card-bg);
+  border-radius: 9999px;
+  padding: 4px;
+}
+
+.remove-button-icon {
+  width: 20px;
+  height: 20px;
+} 

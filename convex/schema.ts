@@ -70,4 +70,44 @@ export default defineSchema({
     curveType: v.optional(v.string()), // For tokenized tracks (LINEAR, EXPONENTIAL, etc.)
     published: v.boolean(),
   }).index("by_artist_id", ["artistId"]),
+
+  // Track deployments table for Devnet
+  track_deployments_devnet: defineTable({
+    walletAddress: v.string(), // Creator's wallet address
+    tokenAddress: v.string(), // The contract address on the blockchain
+    title: v.string(),
+    artist: v.string(),
+    description: v.string(),
+    initialPrice: v.float64(),
+    delta: v.float64(),
+    curveType: v.string(),
+    metadataUrl: v.string(), // IPFS URL for metadata
+    audioUrl: v.string(), // IPFS URL for audio
+    imageUrl: v.string(), // IPFS URL for image
+    txHash: v.optional(v.string()), // Transaction hash
+    deployedAt: v.number(), // Timestamp
+    status: v.string(), // "pending", "succeeded", "failed"
+  })
+  .index("by_wallet", ["walletAddress"])
+  .index("by_token", ["tokenAddress"]),
+
+  // Track deployments table for Mainnet
+  track_deployments_mainnet: defineTable({
+    walletAddress: v.string(), // Creator's wallet address
+    tokenAddress: v.string(), // The contract address on the blockchain
+    title: v.string(),
+    artist: v.string(),
+    description: v.string(),
+    initialPrice: v.float64(),
+    delta: v.float64(),
+    curveType: v.string(),
+    metadataUrl: v.string(), // IPFS URL for metadata 
+    audioUrl: v.string(), // IPFS URL for audio
+    imageUrl: v.string(), // IPFS URL for image
+    txHash: v.optional(v.string()), // Transaction hash
+    deployedAt: v.number(), // Timestamp
+    status: v.string(), // "pending", "succeeded", "failed"
+  })
+  .index("by_wallet", ["walletAddress"])
+  .index("by_token", ["tokenAddress"]),
 }); 

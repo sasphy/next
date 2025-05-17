@@ -6,15 +6,13 @@
  * and provides guidance on how to set them if they're missing.
  */
 
-import dotenv from 'dotenv';
-import path from 'path';
-import fs from 'fs';
-import chalk from 'chalk';
-import { fileURLToPath } from 'url';
+const dotenv = require('dotenv');
+const path = require('path');
+const fs = require('fs');
+const chalk = require('chalk');
 
-// Get directory name for the current module
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.join(__dirname, '..');
+// Get root directory
+const rootDir = process.cwd();
 
 // Load environment variables from .env and .env.local
 dotenv.config({ path: path.join(rootDir, '.env') });
