@@ -32,7 +32,7 @@ export default function SlidesPage() {
   const allSlides: Slide[] = [
     // Slide 1: Title
     {
-      title: "Sasphy",
+      title: "sasphy",
       bg: "solana-slide-bg-1",
       layoutClass: "flex flex-col items-center justify-center",
       content: (
