@@ -39,7 +39,12 @@ const TokenMusicPlayer = ({ audioUrl, title }: { audioUrl: string, title: string
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const togglePlay = () => {
+  const togglePlay = (e?: React.MouseEvent) => {
+    // Stop propagation to prevent triggering parent link click
+    if (e) {
+      e.stopPropagation();
+    }
+    
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
@@ -51,7 +56,10 @@ const TokenMusicPlayer = ({ audioUrl, title }: { audioUrl: string, title: string
   };
 
   return (
-    <div className="token-player flex items-center justify-between p-1.5 bg-muted/30 rounded-full mt-2">
+    <div 
+      className="token-player flex items-center justify-between p-1.5 bg-muted/30 rounded-full mt-2"
+      onClick={(e) => e.stopPropagation()}
+    >
       <button 
         onClick={togglePlay}
         className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-background"
@@ -118,34 +126,41 @@ export default function HomePage() {
   const createMockTokenizedTracks = () => {
     console.log('Creating mock tracks');
     // Generate 25 mock tracks
-    const mockTracks: Track[] = Array.from({ length: 25 }).map((_, index) => ({
-      id: `mock-token-${index}`,
-      title: modernSongTitles[(index * 3) % modernSongTitles.length],
-      artist: {
-        id: `artist-${index}`,
-        name: modernArtistNames[(index * 7) % modernArtistNames.length]
-      },
-      coverArt: getRandomImage(index),
-      coverImage: getRandomImage(index),
-      shortAudioUrl: getRandomAudio(index),
-      fullAudioUrl: getRandomAudio(index),
-      duration: 180 + Math.floor(Math.random() * 120),
-      genre: ["Electronic", "Hip Hop", "Lo-fi", "Ambient", "Trap"][Math.floor(Math.random() * 5)],
-      price: (0.1 + Math.random() * 2).toFixed(2),
-      releaseDate: new Date(Date.now() - Math.random() * 31536000000).toISOString(),
-      tokenId: Math.floor(Math.random() * 10000),
-      tokenized: true,
-      initialPrice: 0.1 + Math.random() * 0.5,
-      currentPrice: 0.3 + Math.random() * 2,
-      totalSupply: Math.floor(Math.random() * 1000) + 100,
-      holders: Math.floor(Math.random() * 100) + 10,
-      bondingCurve: {
-        curveType: ['LINEAR', 'EXPONENTIAL', 'LOGARITHMIC', 'SIGMOID'][Math.floor(Math.random() * 4)] as any,
-        delta: 0.01 + Math.random() * 0.05,
-        initialSupply: 10,
-        maxSupply: Math.floor(Math.random() * 1000) + 500
-      }
-    }));
+    const mockTracks: Track[] = Array.from({ length: 25 }).map((_, index) => {
+      // Generate a more realistic token ID that looks like a PublicKey
+      const tokenId = Array.from({ length: 32 }, () => 
+        Math.floor(Math.random() * 256).toString(16).padStart(2, '0')
+      ).join('').substring(0, 32);
+      
+      return {
+        id: tokenId,
+        title: modernSongTitles[(index * 3) % modernSongTitles.length],
+        artist: {
+          id: `artist-${index}`,
+          name: modernArtistNames[(index * 7) % modernArtistNames.length]
+        },
+        coverArt: getRandomImage(index),
+        coverImage: getRandomImage(index),
+        shortAudioUrl: getRandomAudio(index),
+        fullAudioUrl: getRandomAudio(index),
+        duration: 180 + Math.floor(Math.random() * 120),
+        genre: ["Electronic", "Hip Hop", "Lo-fi", "Ambient", "Trap"][Math.floor(Math.random() * 5)],
+        price: (0.1 + Math.random() * 2).toFixed(2),
+        releaseDate: new Date(Date.now() - Math.random() * 31536000000).toISOString(),
+        tokenId: Math.floor(Math.random() * 10000),
+        tokenized: true,
+        initialPrice: 0.1 + Math.random() * 0.5,
+        currentPrice: 0.3 + Math.random() * 2,
+        totalSupply: Math.floor(Math.random() * 1000) + 100,
+        holders: Math.floor(Math.random() * 100) + 10,
+        bondingCurve: {
+          curveType: ['LINEAR', 'EXPONENTIAL', 'LOGARITHMIC', 'SIGMOID'][Math.floor(Math.random() * 4)] as any,
+          delta: 0.01 + Math.random() * 0.05,
+          initialSupply: 10,
+          maxSupply: Math.floor(Math.random() * 1000) + 500
+        }
+      };
+    });
     
     // Synchronously set state to guarantee display
     setTimeout(() => {
@@ -350,8 +365,8 @@ export default function HomePage() {
           ) : latestTokens.length > 0 ? (
             <div className="token-latest-grid grid grid-cols-2 gap-2 motion-translate-y-in-[20px] motion-opacity-in-[0%] motion-duration-[0.6s]">
               {latestTokens.slice(0, 4).map((token, idx) => (
-                <Link key={token.id || idx} href={`/token/${token.id}`} className="token-latest-card">
-                  <div className="token-card music-card hover:scale-[1.02] transition-transform duration-300">
+                <div key={token.id || idx} className="token-latest-card">
+                  <Link href={`/token/${token.id}`} className="token-card music-card hover:scale-[1.02] transition-transform duration-300">
                     <div className="token-card-image aspect-square relative overflow-hidden rounded-md">
                       <img 
                         src={token.coverArt} 
@@ -367,10 +382,10 @@ export default function HomePage() {
                     <div className="p-2">
                       <h3 className="font-bold text-xs truncate">{token.title}</h3>
                       <p className="text-muted-foreground text-xs truncate">{typeof token.artist === 'object' ? token.artist.name : token.artist}</p>
-                      <TokenMusicPlayer audioUrl={token.shortAudioUrl || ""} title={token.title} />
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  <TokenMusicPlayer audioUrl={token.shortAudioUrl || ""} title={token.title} />
+                </div>
               ))}
               <Link href="/token/latest" className="text-primary flex items-center gap-1 text-xs hover:underline mt-1 col-span-2">
                 View all <ArrowRight className="h-3 w-3" />
@@ -397,8 +412,8 @@ export default function HomePage() {
           ) : trendingTokens.length > 0 ? (
             <div className="token-trending-grid grid grid-cols-2 gap-2 motion-translate-y-in-[20px] motion-opacity-in-[0%] motion-duration-[0.6s]">
               {trendingTokens.slice(0, 4).map((token, idx) => (
-                <Link key={token.id || idx} href={`/token/${token.id}`} className="token-trending-card">
-                  <div className="token-card music-card hover:scale-[1.02] transition-transform duration-300">
+                <div key={token.id || idx} className="token-trending-card">
+                  <Link href={`/token/${token.id}`} className="token-card music-card hover:scale-[1.02] transition-transform duration-300">
                     <div className="token-card-image aspect-square relative overflow-hidden rounded-md">
                       <img 
                         src={token.coverArt} 
@@ -417,10 +432,10 @@ export default function HomePage() {
                     <div className="p-2">
                       <h3 className="font-bold text-xs truncate">{token.title}</h3>
                       <p className="text-muted-foreground text-xs truncate">{typeof token.artist === 'object' ? token.artist.name : token.artist}</p>
-                      <TokenMusicPlayer audioUrl={token.shortAudioUrl || ""} title={token.title} />
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  <TokenMusicPlayer audioUrl={token.shortAudioUrl || ""} title={token.title} />
+                </div>
               ))}
               <Link href="/token/trending" className="text-primary flex items-center gap-1 text-xs hover:underline mt-1 col-span-2">
                 View all <ArrowRight className="h-3 w-3" />
@@ -447,8 +462,8 @@ export default function HomePage() {
           ) : featuredTokens.length > 0 ? (
             <div className="token-featured-grid grid grid-cols-2 gap-2 motion-translate-y-in-[20px] motion-opacity-in-[0%] motion-duration-[0.6s]">
               {featuredTokens.slice(0, 4).map((token, idx) => (
-                <Link key={token.id || idx} href={`/token/${token.id}`} className="token-featured-card">
-                  <div className="token-card music-card hover:scale-[1.02] transition-transform duration-300">
+                <div key={token.id || idx} className="token-featured-card">
+                  <Link href={`/token/${token.id}`} className="token-card music-card hover:scale-[1.02] transition-transform duration-300">
                     <div className="token-card-image aspect-square relative overflow-hidden rounded-md">
                       <img 
                         src={token.coverArt} 
@@ -467,10 +482,10 @@ export default function HomePage() {
                     <div className="p-2">
                       <h3 className="font-bold text-xs truncate">{token.title}</h3>
                       <p className="text-muted-foreground text-xs truncate">{typeof token.artist === 'object' ? token.artist.name : token.artist}</p>
-                      <TokenMusicPlayer audioUrl={token.shortAudioUrl || ""} title={token.title} />
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  <TokenMusicPlayer audioUrl={token.shortAudioUrl || ""} title={token.title} />
+                </div>
               ))}
               <Link href="/token/featured" className="text-primary flex items-center gap-1 text-xs hover:underline mt-1 col-span-2">
                 View all <ArrowRight className="h-3 w-3" />
@@ -502,13 +517,13 @@ export default function HomePage() {
       <section className="token-trending-section-full pb-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <Flame className="h-5 w-5 text-red-500" />
               <h2 className="text-xl md:text-2xl font-display font-bold">Trending Sound Tokens</h2>
             </div>
             <Link href="/token/trending" className="text-primary flex items-center gap-1 hover:underline">
               View all <ArrowRight className="h-4 w-4" />
-            </Link>
+            </Link> */}
           </div>
           
           {isLoading ? (

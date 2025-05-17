@@ -1,180 +1,276 @@
-# Sasphy - Web3 Music Streaming Platform on Solana
+# Sasphy - Web3 Music Platform on Solana
 
-Sasphy is a revolutionary music platform built on the Solana blockchain, designed to empower both artists and listeners through decentralized music ownership and discovery.
+Sasphy is a decentralized music platform built on the Solana blockchain that empowers both artists and listeners through tokenized music ownership. The platform leverages bonding curve mechanics to create a unique token economy where early supporters benefit from price appreciation.
 
-## Features
+Designed and built by Oslo.
 
-- **NFT Music Ownership** - Buy and collect music as NFTs using Solana blockchain
-- **Early Vibe (EV) Rating System** - Get rewarded for discovering tracks before they become popular
-- **AI Radio Host** - Enjoy personalized introductions to new music with our AI DJ
-- **Multi-Edition Tokens** - Implemented using Metaplex Print Editions
-- **Direct Artist Support** - Artists receive royalties directly through the blockchain
-- **Social Influence** - Build your reputation as a music curator
+## Core Features
+
+- **Music Token Factory** - Deployed Solana program for creating music tokens with bonding curves
+- **Smart Wallet Integration** - Coinbase Smart Wallet support with gas-free transactions via paymaster  
+- **Multi-Edition NFTs** - Using Metaplex for master and print editions of music tokens
+- **Bonding Curve Economics** - Four curve types (Linear, Exponential, Logarithmic, Sigmoid)
+- **Artist Royalties** - Direct crypto payments to creators on every token purchase
+- **Token Dashboard** - Visualizations showing token performance and market data
+- **Audio Playback** - High-quality music streaming with spectrum visualization
+- **IPFS Integration** - Decentralized storage for music and metadata via Pinata
 
 ## Technology Stack
 
-- **Frontend**: Next.js 15.3.1 + React 19.1 + Tailwind v4
-- **UI Components**: shadcn/UI
-- **Blockchain**: Solana + Metaplex
-- **Backend**: Elysia (Bun) API
-- **Storage**: AWS S3 for music files
-- **Real-time Data**: Redis for caching and scoring
+- **Frontend**: Next.js 15.3.1 with React 19.1 and Tailwind v4
+- **UI**: ShadCN component library with Radix UI primitives
+- **Blockchain**: Solana (Program deployed on Devnet)
+- **Smart Contracts**: Anchor framework with Rust
+- **Wallet Adapters**: Solana Wallet Adapter + Coinbase SDK
+- **Storage**: IPFS via Pinata gateway
+- **APIs**: Elysia (Bun) for server endpoints
+- **Database**: Convex for token deployments
+
+## Repository Structure
+
+The project consists of two main repositories:
+
+### 1. Next-Solana (Frontend)
+
+```
+/next-solana
+├── src/
+│   ├── app/               # Next.js 15 app router
+│   │   ├── components/        # React components 
+│   │   │   ├── ui/            # ShadCN UI components
+│   │   │   ├── wallet/        # Wallet integration components
+│   │   │   └── providers/     # Context providers
+│   │   ├── hooks/             # React hooks
+│   │   │   ├── use-wallet-auth.ts
+│   │   │   └── use-coinbase-smart-wallet.ts
+│   │   ├── lib/               # Utility libraries
+│   │   │   └── TokenFactoryClient.ts
+│   │   └── types/             # TypeScript definitions
+│   ├── public/
+│   │   └── assets/            # Static assets
+│   └── package.json           # Dependencies and scripts
+```
+
+### 2. Blockchain-Solana (Smart Contracts)
+
+```
+/blockchain-solana
+├── programs/
+│   └── music-token-factory/  # Solana program (Rust)
+│       ├── src/
+│       │   └── lib.rs        # Main contract code
+│       └── Cargo.toml        # Rust dependencies
+├── src/                      # TypeScript client
+│   └── solbeat-token-client.ts
+├── deployment/               # Deployment artifacts
+├── scripts/                  # Deployment scripts
+└── Anchor.toml               # Anchor configuration
+```
+
+## Deployed Contracts
+
+| Contract | Address | Network |
+|----------|---------|---------|
+| Token Factory | `A3hPb35qCY6eqdcgqSGKWKCUDKnE9uUrXPowyaRGguZK` | Solana Devnet |
+| Protocol PDA | `4VGsLuKatfBkEm8bSH6uKnWagXBx9QfxeGxuih6oN2sM` | Solana Devnet |
+| Treasury | `FXHUWiWF2QcjnZ9qCkxrzKpjuwzgr3e8acCPV4sKPRSV` | Solana Devnet |
+| Admin | `7vCWanYCd848kSEqEbZUuamhgFhnKqDh4b2TC1fVEGg9` | Solana Devnet |
+
+## Smart Contract Architecture
+
+The music token factory implements several key functions:
+
+1. **initialize_protocol** - Sets platform fee and treasury address
+2. **create_music_token** - Creates new music token with bonding curve parameters
+3. **buy_tokens** - Purchases tokens with SOL based on the bonding curve
+4. **sell_tokens** - Sells tokens back to the protocol
+5. **update_token_metadata** - Updates token information
+6. **update_protocol** - Modifies platform parameters
+
+### Bonding Curve Implementation
+
+The contract supports four types of bonding curves:
+
+```rust
+pub enum BondingCurveType {
+    Linear,
+    Exponential,
+    Logarithmic,
+    Sigmoid
+}
+```
+
+Each curve type implements a different price function:
+
+- **Linear**: `Price = initial_price + (supply * delta)`
+- **Exponential**: `Price = initial_price * (1 + (supply² * delta / 10000))`
+- **Logarithmic**: `Price = initial_price * (1 + delta/10000 * ln(1 + supply))`
+- **Sigmoid**: `Price = initial_price * (1 + delta/5000 * (supply - 1000)/(1 + abs(supply - 1000)))`
+
+## Frontend Integration
+
+The frontend uses a `TokenFactoryClient` to interact with the Solana program. Key functionality includes:
+
+- **Wallet Connection** - Support for multiple wallet providers
+- **Token Creation** - Form with parameters for creating new tokens
+- **Token Purchase** - UI for buying and selling tokens
+- **Token Detail Pages** - Displays token information and market data
+- **Creator Dashboard** - Analytics for token creators
+
+### Wallet Support
+
+The application supports multiple wallet types:
+
+1. **Solana Native Wallets** - Phantom, Solflare, etc.
+2. **Coinbase Smart Wallet** - With paymaster integration for gas-free transactions
+3. **Wallet Connect** - For broader wallet support
+
+## Coinbase Smart Wallet Integration
+
+A key feature is the integration with Coinbase Smart Wallet, including paymaster support:
+
+```typescript
+// From src/hooks/use-coinbase-smart-wallet.ts
+const sendTransaction = useCallback(async (to: string, value: string, data: string = '0x') => {
+  // ...
+  // If paymaster service is supported, include it
+  if (capabilities && capabilities[chainId]?.paymasterService?.supported) {
+    txOptions = {
+      capabilities: {
+        paymasterService: {
+          url: process.env.NEXT_PUBLIC_PAYMASTER_URL || '/api/paymaster'
+        }
+      }
+    };
+  }
+  // ...
+});
+```
 
 ## Environment Setup
 
-To run this application properly, you need to configure some environment variables. Create a `.env.local` file in the project root with the following content:
+Create a `.env.local` file with these variables:
 
 ```
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:3000
-NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
+# RPC Configuration
+NEXT_PUBLIC_RPC_URL_SOLANA_DEVNET=https://api.devnet.solana.com
+NEXT_PUBLIC_RPC_URL_SOLANA_MAINNET=https://api.mainnet-beta.solana.com
 
-# Feature Flags
-NEXT_PUBLIC_ENABLE_AUTH=true
-NEXT_PUBLIC_ENABLE_PURCHASE=true
-
-# Environment
-NODE_ENV=development
-
-# Solana Configuration
+# Blockchain Settings
 NEXT_PUBLIC_SOLANA_NETWORK=devnet
 NEXT_PUBLIC_SOLANA_PROGRAM_ID=A3hPb35qCY6eqdcgqSGKWKCUDKnE9uUrXPowyaRGguZK
 NEXT_PUBLIC_SOLANA_ADMIN_WALLET=7vCWanYCd848kSEqEbZUuamhgFhnKqDh4b2TC1fVEGg9
 NEXT_PUBLIC_SOLANA_TREASURY_ADDRESS=FXHUWiWF2QcjnZ9qCkxrzKpjuwzgr3e8acCPV4sKPRSV
 NEXT_PUBLIC_SOLANA_PROTOCOL_PDA=4VGsLuKatfBkEm8bSH6uKnWagXBx9QfxeGxuih6oN2sM
 
-# RPC URLs
-RPC_URL_SOLANA_DEVNET=https://api.devnet.solana.com
-RPC_URL_SOLANA_MAINNET=https://api.mainnet-beta.solana.com
-
-# Convex (Database)
-NEXT_PUBLIC_CONVEX_URL=your-convex-url-here
-
-# IPFS/Pinata Configuration - REQUIRED
+# IPFS/Pinata
 PINATA_API_KEY=your-pinata-api-key
 PINATA_API_SECRET=your-pinata-api-secret
 PINATA_JWT=your-pinata-jwt
 NEXT_PUBLIC_GATEWAY_URL=https://gateway.pinata.cloud/ipfs
 
-## Environment Variables
+# Paymaster Service (for gas-free transactions)
+NEXT_PUBLIC_PAYMASTER_URL=/api/paymaster
+PAYMASTER_SERVICE_URL=https://paymaster.coinbase.com/api
+```
+
+## Development Workflow
+
+### Setup and Installation
 
 ```bash
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=<your_cloudinary_cloud_name>
-NEXT_PUBLIC_CLOUDINARY_PRESET=<your_cloudinary_preset>
-NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
-NEXT_PUBLIC_SOLANA_PROGRAM_ID=A3hPb35qCY6eqdcgqSGKWKCUDKnE9uUrXPowyaRGguZK
-NEXT_PUBLIC_SOLANA_ADMIN_WALLET=7vCWanYCd848kSEqEbZUuamhgFhnKqDh4b2TC1fVEGg9
-NEXT_PUBLIC_SOLANA_TREASURY_ADDRESS=FXHUWiWF2QcjnZ9qCkxrzKpjuwzgr3e8acCPV4sKPRSV
+# Clone repositories
+git clone https://github.com/your-org/music-streaming-web3.git
+cd music-streaming-web3
+
+# Install dependencies for frontend
+cd next-solana
+bun install
+
+# Install dependencies for blockchain
+cd ../blockchain-solana
+bun install
 ```
 
-### Setting up Pinata Credentials
+### Running Development Server
 
-1. Create an account at [Pinata](https://app.pinata.cloud/register)
-2. Go to your dashboard and generate an API key
-3. Make sure to give it upload permissions
-4. Copy the API Key, API Secret, and JWT
-5. Paste them into your `.env.local` file
+```bash
+# Start the frontend
+cd next-solana
+bun run dev
 
-## Getting Started
+# The app will be available at http://localhost:3088
+```
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   bun install
-   ```
-3. Set up your environment variables in `.env.local`:
-   ```
-   # Example values (replace with your own)
-   SOLANA_RPC_URL=https://api.devnet.solana.com
-   ```
-4. Start the development server:
-   ```bash
-   bun run dev
-   ```
+### Building for Production
 
-## Smart Contract Architecture
+```bash
+# Build the frontend
+cd next-solana
+bun run build
+```
 
-Sasphy uses the Metaplex NFT standard on Solana to implement multi-edition music tokens:
+## Deployment Modes
 
-- **Master Edition NFT** - Created by the artist for each track
-- **Print Editions** - Limited copies purchased by collectors
-- **Royalty Management** - Built-in royalty distribution to artists
+The platform supports two modes:
 
-## Contributing
+1. **Simulation Mode**: For development without real blockchain transactions
+2. **Live Mode**: Real interactions with Solana blockchain
 
-We welcome contributions from the community! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+### Creating a Music Token
 
-## License
+To create a new music token using the Solana program:
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+```typescript
+const tokenFactory = new TokenFactoryClient(connection, wallet);
+await tokenFactory.createMusicToken(
+  "Song Name",
+  "SYMB",
+  "ipfs://metadata-uri",
+  0.1, // initial price in SOL
+  0.01, // price increment in SOL
+  BondingCurveType.Linear,
+  5 // artist fee percentage
+);
+```
 
-## New Feature: Audio Spectrum Visualization
+### Buying Music Tokens
 
-We've added an advanced audio spectrum visualization component that provides real-time frequency analysis of the playing audio tracks. This enhances the user experience with visual feedback.
+```typescript
+await tokenFactory.buyTokens(
+  new PublicKey("token-mint-address"),
+  1 // amount to buy
+);
+```
 
-### AudioSpectrum Component
+## Music Token Lifecycle
 
-The `AudioSpectrum` component (`src/components/ui/audio-spectrum.tsx`) uses the Web Audio API to create a real-time frequency analyzer. Key features:
+1. **Artist Creates Token**: Sets parameters and uploads music/metadata to IPFS
+2. **Token Listed**: Available for purchase on the platform
+3. **Fans Purchase**: Tokens follow bonding curve pricing
+4. **Price Appreciation**: Early supporters benefit from price growth
+5. **Resale Market**: Holders can sell tokens back to the protocol
 
-- Real-time FFT (Fast Fourier Transform) analysis
-- Customizable bar count, colors, and height
-- Responsive design that works across devices
-- Smooth animations for a polished look
+## Metadata Structure
 
-### Implementation Details
+Each music token contains metadata in the following format:
 
-The component:
-1. Creates an `AnalyserNode` connected to the audio element
-2. Uses `requestAnimationFrame` for efficient rendering
-3. Samples frequency data using `getByteFrequencyData()`
-4. Renders the visualization on HTML5 Canvas
-
-### Usage Example
-
-```tsx
-import React, { useRef, useState } from 'react';
-import AudioSpectrum from '@/components/ui/audio-spectrum';
-
-function MusicPlayer() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  
-  return (
-    <div>
-      <audio 
-        ref={audioRef}
-        src="/path/to/audio.mp3"
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-      />
-      
-      <AudioSpectrum
-        audioRef={audioRef}
-        isPlaying={isPlaying}
-        barCount={70}
-        barColor="var(--color-primary)"
-        height={60}
-      />
-      
-      <button onClick={() => audioRef.current?.play()}>Play</button>
-      <button onClick={() => audioRef.current?.pause()}>Pause</button>
-    </div>
-  );
+```json
+{
+  "name": "Song Title",
+  "symbol": "SYMB",
+  "description": "Song description",
+  "image": "ipfs://cover-art-hash",
+  "animation_url": "ipfs://audio-file-hash",
+  "attributes": [
+    { "trait_type": "Genre", "value": "Electronic" },
+    { "trait_type": "Duration", "value": "3:45" },
+    { "trait_type": "Artist", "value": "Artist Name" }
+  ],
+  "properties": {
+    "files": [
+      { "uri": "ipfs://audio-file-hash", "type": "audio/mp3" }
+    ]
+  }
 }
 ```
-
-### Library Page Demo
-
-A new Library page (`src/app/library/page.tsx`) showcases the AudioSpectrum component with sample tracks. It features:
-
-- A tabbed interface for tracks and visualizer
-- Sample track selection
-- Real-time spectrum visualization
-- Responsive design
-
-## Future Improvements
-
-- Additional visualization types (waveform, particles)
-- User-customizable visualization settings
-- Reactive visualizations tied to music mood/genre
-- Audio effects processing (EQ, reverb, etc.)

@@ -15,10 +15,11 @@ export function useWalletAuth() {
   
   // Get wallet context safely to prevent errors if WalletProvider isn't mounted yet
   const wallet = useWallet();
-  const publicKey = wallet?.publicKey;
-  const signMessage = wallet?.signMessage;
-  const signTransaction = wallet?.signTransaction;
-  const connected = wallet?.connected;
+  // Safely access wallet properties with optional chaining and nullish coalescing
+  const publicKey = wallet?.publicKey ?? null;
+  const signMessage = wallet?.signMessage ?? null;
+  const signTransaction = wallet?.signTransaction ?? null;
+  const connected = wallet?.connected ?? false;
   
   const { login, logout, isAuthenticated, address } = useSasphy();
   const [isLoggingIn, setIsLoggingIn] = useState(false);

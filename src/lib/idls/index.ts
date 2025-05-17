@@ -1,4 +1,4 @@
-import type { MusicTokenFactory } from '../types/music_token_factory';
+import type { MusicTokenFactory } from '../../types/music_token_factory';
 import MusicTokenFactoryIDL from './music_token_factory.json';
 
 // Export the IDL with proper TypeScript types

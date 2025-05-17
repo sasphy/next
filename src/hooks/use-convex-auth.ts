@@ -16,8 +16,9 @@ export function useConvexAuth() {
   
   // Get wallet context safely to prevent errors if WalletProvider isn't mounted yet
   const wallet = useWallet();
-  const publicKey = wallet?.publicKey;
-  const connected = wallet?.connected;
+  // Safely access wallet properties with optional chaining and nullish coalescing
+  const publicKey = wallet?.publicKey ?? null;
+  const connected = wallet?.connected ?? false;
   
   const [userId, setUserId] = useState<Id<'users'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);

@@ -104,20 +104,11 @@ export const SolanaWalletProvider: FC<SolanaWalletProviderProps> = ({
     [network]
   );
 
-  // Return a simplified tree during SSR
-  if (typeof window === 'undefined') {
-    return <>{children}</>;
-  }
-
-  // Return children only during initial client-side hydration
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
-  // Once mounted and on client-side, render full wallet provider tree
+  // Always render the full wallet provider tree, but with empty wallets array during SSR
+  // This ensures the WalletContext is always available to components
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider wallets={wallets} autoConnect={mounted}>
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

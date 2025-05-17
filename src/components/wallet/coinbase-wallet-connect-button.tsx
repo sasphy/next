@@ -1,8 +1,9 @@
 'use client';
 
-import { FC, useEffect, useState, useCallback, useRef } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CoinbaseWalletSDK } from '@coinbase/wallet-sdk';
+import { useCoinbaseSmartWallet } from '@/hooks/use-coinbase-smart-wallet';
+import { motion } from 'framer-motion';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 interface CoinbaseWalletConnectButtonProps {
@@ -16,154 +17,105 @@ const CoinbaseWalletConnectButton: FC<CoinbaseWalletConnectButtonProps> = ({
   network = WalletAdapterNetwork.Devnet,
   className = ''
 }) => {
-  const [mounted, setMounted] = useState(false);
-  const providerRef = useRef<any>(null);
-  const [address, setAddress] = useState<string | null>(null);
-  const [chainId, setChainId] = useState<number>(8453); // Base mainnet by default
-  const [isConnecting, setIsConnecting] = useState(false);
-
-  // Define the accounts changed handler with useCallback
-  const handleAccountsChanged = useCallback((accounts: string[]) => {
-    if (accounts.length === 0) {
-      setAddress(null);
-    } else {
-      setAddress(accounts[0]);
-      // Notify parent component if callback provided
-      if (onWalletConnect) {
-        onWalletConnect(accounts[0]);
-      }
-    }
-  }, [onWalletConnect]);
-
-  const handleChainChanged = (chainId: string) => {
-    console.log('Chain changed to:', chainId);
-    // You can add additional handling here if needed
-  };
-
-  const handleDisconnect = () => {
-    setAddress(null);
-  };
-
-  // Initialize only on client-side
+  const {
+    connectWallet,
+    disconnectWallet,
+    signIn,
+    address,
+    isConnected,
+    isConnecting,
+    isLoggingIn,
+    isAuthenticated,
+    getCapabilities
+  } = useCoinbaseSmartWallet();
+  
+  const [capabilities, setCapabilities] = useState<any>(null);
+  const [hasPaymaster, setHasPaymaster] = useState(false);
+  
+  // Attempt to fetch wallet capabilities
   useEffect(() => {
-    setMounted(true);
-    
-    // Determine chain ID based on network
-    if (typeof window !== 'undefined') {
-      // If window.ENV network is set, use that
-      if (window.ENV?.SOLANA_NETWORK === 'Devnet') {
-        setChainId(84532); // Base Sepolia (testnet)
-      } else if (window.ENV?.SOLANA_NETWORK === 'Mainnet') {
-        setChainId(8453); // Base Mainnet
-      }
-
-      try {
-        // Initialize Coinbase Wallet SDK
-        const sdk = new CoinbaseWalletSDK({
-          appName: 'Sasphy Music',
-          appChainIds: [chainId],
-          appLogoUrl: '/assets/logo.svg', // Update with your app's logo
-        });
-
-        // Create the provider with Smart Wallet preferences
-        const web3Provider = sdk.makeWeb3Provider({
-          options: 'smartWalletOnly',
-        });
-
-        providerRef.current = web3Provider;
-
-        // Check if already connected
-        if (web3Provider) {
-          web3Provider.request({ method: 'eth_requestAccounts' })
-            .then((accounts: string[] | unknown) => {
-              if (Array.isArray(accounts) && accounts.length > 0) {
-                handleAccountsChanged(accounts);
-              }
-            })
-            .catch((error) => {
-              console.error('Error checking accounts:', error || 'Unknown error');
-            });
-
-          // Setup event listeners with proper type handling
-          const accountsChangedHandler = (accounts: unknown) => {
-            if (Array.isArray(accounts) && accounts.length > 0) {
-              handleAccountsChanged(accounts as string[]);
-            }
-          };
-          
-          web3Provider.on('accountsChanged', accountsChangedHandler);
-          web3Provider.on('chainChanged', handleChainChanged);
-          web3Provider.on('disconnect', handleDisconnect);
-          
-          // Store event handlers for cleanup
-          return () => {
-            if (web3Provider) {
-              web3Provider.removeListener('accountsChanged', accountsChangedHandler);
-              web3Provider.removeListener('chainChanged', handleChainChanged);
-              web3Provider.removeListener('disconnect', handleDisconnect);
-            }
-          };
+    if (isConnected && address) {
+      getCapabilities().then(caps => {
+        setCapabilities(caps);
+        // Check if paymaster service is supported
+        if (caps && Object.keys(caps).some(chainId => 
+          caps[chainId]?.paymasterService?.supported)) {
+          setHasPaymaster(true);
         }
-      } catch (error) {
-        console.error('Failed to initialize Coinbase wallet provider:', error);
-      }
+      });
     }
-  }, [chainId, network, handleAccountsChanged]);
+  }, [isConnected, address, getCapabilities]);
 
-  const connectWallet = async () => {
-    if (!providerRef.current) {
-      console.error('Provider not initialized');
-      return;
-    }
-
-    setIsConnecting(true);
+  // Handle connect button click
+  const handleConnect = async () => {
     try {
-      const accounts = await providerRef.current.request({ method: 'eth_requestAccounts' });
-      handleAccountsChanged(accounts);
+      const addr = await connectWallet();
+      if (addr && onWalletConnect) {
+        // Attempt to sign in
+        await signIn();
+        onWalletConnect(addr);
+      }
     } catch (error) {
       console.error('Error connecting wallet:', error);
-    } finally {
-      setIsConnecting(false);
     }
   };
 
-  const disconnectWallet = async () => {
-    if (!providerRef.current) return;
+  // JSX for the button when wallet is connected
+  const connectedButton = (
+    <div className="flex items-center space-x-2">
+      <Button 
+        variant="outline" 
+        className="font-medium py-1.5 px-4 rounded-lg flex items-center gap-2"
+        onClick={disconnectWallet}
+      >
+        {hasPaymaster && (
+          <div className="relative flex items-center mr-1">
+            <span className="h-2 w-2 rounded-full bg-green-500"></span>
+            <motion.span 
+              className="absolute h-2 w-2 rounded-full bg-green-500"
+              animate={{ scale: [1, 1.5, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              style={{ opacity: 0.5 }}
+            />
+          </div>
+        )}
+        {`${address?.substring(0, 6)}...${address?.substring(address.length - 4)}`}
+      </Button>
+    </div>
+  );
 
-    try {
-      await providerRef.current.disconnect();
-      setAddress(null);
-    } catch (error) {
-      console.error('Error disconnecting wallet:', error);
-    }
-  };
+  // JSX for the button when wallet is not connected
+  const disconnectedButton = (
+    <Button
+      onClick={handleConnect}
+      disabled={isConnecting}
+      className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-1.5 px-4 rounded-lg font-medium transition-colors flex items-center gap-2"
+    >
+      {isConnecting ? (
+        <>
+          <motion.div 
+            className="h-3 w-3 rounded-full bg-white/80"
+            animate={{ scale: [1, 0.8, 1] }}
+            transition={{ repeat: Infinity, duration: 1 }}
+          />
+          Connecting...
+        </>
+      ) : (
+        <>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 0C12.4183 0 16 3.58172 16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0Z" fill="#0052FF"/>
+            <path d="M8.00002 3.46667C5.52302 3.46667 3.51969 5.47 3.51969 7.94667C3.51969 10.4233 5.52302 12.4267 8.00002 12.4267C10.477 12.4267 12.4803 10.4233 12.4803 7.94667C12.4803 5.47 10.477 3.46667 8.00002 3.46667ZM6.28502 9.91333V6.06667H9.76969V9.91333H6.28502Z" fill="white"/>
+          </svg>
+          Smart Wallet
+        </>
+      )}
+    </Button>
+  );
 
-  // Don't render until client-side to prevent hydration issues
-  if (!mounted) {
-    return null;
-  }
-
+  // Return connected or disconnected button based on wallet state
   return (
     <div className={`coinbase-wallet-connect ${className}`}>
-      {address ? (
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            className="font-medium py-1.5 px-4 rounded-lg"
-            onClick={disconnectWallet}
-          >
-            {`${address.substring(0, 6)}...${address.substring(address.length - 4)}`}
-          </Button>
-        </div>
-      ) : (
-        <Button
-          onClick={connectWallet}
-          disabled={isConnecting}
-          className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-1.5 px-4 rounded-lg font-medium transition-colors"
-        >
-          {isConnecting ? 'Connecting...' : 'Coinbase Smart Wallet'}
-        </Button>
-      )}
+      {isConnected ? connectedButton : disconnectedButton}
     </div>
   );
 };

@@ -54,6 +54,7 @@ export function SearchBar({
         `}
       />
       <button
+        title="Search"
         onClick={handleSearch}
         className="absolute left-3 text-muted-foreground hover:text-primary transition-colors"
       >

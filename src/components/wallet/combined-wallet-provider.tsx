@@ -26,11 +26,8 @@ export const CombinedWalletProvider: FC<CombinedWalletProviderProps> = ({
     setMounted(true);
   }, []);
 
-  // Server-side rendering - return children without providers
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
+  // Always render the providers, even during SSR
+  // This ensures consistent behavior and prevents context errors
   return (
     <SolanaWalletProvider network={network}>
       <CoinbaseSmartWalletProvider network={network}>

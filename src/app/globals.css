@@ -356,7 +356,7 @@ div[data-nimg="fill"] {
   }
 
   .solana-button {
-    background: linear-gradient(to right, #9945FF, #14F195);
+    background: linear-gradient(to right, #00FFA3, #DC1FFF);
     color: white;
     font-weight: 600;
     padding: 0.75rem 1.5rem;
@@ -367,7 +367,269 @@ div[data-nimg="fill"] {
   .solana-button:hover {
     opacity: 0.9;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(153, 69, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 255, 163, 0.2);
+  }
+
+  /* Solana Slides Styles */
+  .solana-slide-bg-1 {
+    background-color: #0c0c12;
+    background-image: radial-gradient(circle at 10% 10%, #171730 0%, transparent 40%);
+  }
+
+  .solana-slide-bg-2 {
+    background-color: #0c0c14;
+    background-image: radial-gradient(circle at 90% 10%, #121230 0%, transparent 30%);
+  }
+
+  .solana-slide-bg-3 {
+    background-color: #0c0c12;
+    background-image: radial-gradient(circle at 50% 0%, #101035 0%, transparent 50%);
+  }
+
+  .solana-slide-bg-4 {
+    background-color: #0c0c14;
+    background-image: radial-gradient(circle at 10% 90%, #101035 0%, transparent 40%);
+  }
+
+  .solana-slide-bg-5 {
+    background-color: #0c0c12;
+    background-image: radial-gradient(circle at 90% 90%, #121230 0%, transparent 40%);
+  }
+
+  .solana-slide-bg-6 {
+    background-color: #0c0c14;
+    background-image: radial-gradient(circle at 50% 50%, #101035 0%, transparent 35%);
+  }
+
+  .solana-slide-bg-7 {
+    background-color: #0c0c12;
+    background-image: radial-gradient(circle at 10% 50%, #121230 0%, transparent 40%);
+  }
+
+  .solana-slide-bg-default {
+    background-color: #0c0c14;
+  }
+
+  .solana-bg-glow {
+    background: radial-gradient(circle, rgba(0, 255, 163, 0.1) 0%, rgba(220, 31, 255, 0.1) 50%, transparent 70%);
+    filter: blur(80px);
+  }
+
+  .solana-bg-grid {
+    background-size: 30px 30px;
+    background-image: 
+      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  }
+
+  .solana-nav-button {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .solana-nav-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(0, 255, 163, 0.2),
+      transparent
+    );
+    transition: left 0.5s ease;
+  }
+
+  .solana-nav-button:hover::after {
+    left: 100%;
+  }
+
+  .solana-primary {
+    color: #00FFA3;
+  }
+
+  .solana-secondary {
+    color: #DC1FFF;
+  }
+
+  .from-solana-primary {
+    --tw-gradient-from: #00FFA3;
+  }
+
+  .to-solana-secondary {
+    --tw-gradient-to: #DC1FFF;
+  }
+
+  .bg-solana-primary {
+    background-color: #00FFA3;
+  }
+
+  .bg-solana-secondary {
+    background-color: #DC1FFF;
+  }
+
+  .text-solana-primary {
+    color: #00FFA3;
+  }
+
+  .text-solana-secondary {
+    color: #DC1FFF;
+  }
+
+  .border-solana-primary {
+    border-color: #00FFA3;
+  }
+
+  .slide-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    background: linear-gradient(to right, #00FFA3, #DC1FFF);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.025em;
+  }
+
+  .slide-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .slide-two-column {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    .slide-two-column {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .slide-image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .slide-list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .slide-list-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+
+  .glass-card {
+    background-color: rgba(20, 20, 40, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    overflow: hidden;
+  }
+
+  .glass-panel {
+    background-color: rgba(20, 20, 40, 0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  .solana-stats-card .stat-item {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    text-align: center;
+  }
+
+  .solana-stats-card .stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #00FFA3;
+    margin-bottom: 0.25rem;
+  }
+
+  .solana-stats-card .stat-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .solana-pulse-container {
+    position: absolute;
+    top: -30px;
+    right: 20px;
+    z-index: -1;
+  }
+
+  .solana-pulse-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 255, 163, 0.5);
+    animation: pulse 2s infinite;
+  }
+
+  .solana-pulse-dot {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(to right, #00FFA3, #DC1FFF);
+    box-shadow: 0 0 10px rgba(0, 255, 163, 0.5);
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  .solana-logo {
+    filter: drop-shadow(0 0 10px rgba(0, 255, 163, 0.5));
+  }
+
+  .solana-feature-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    z-index: 1;
   }
 }
 

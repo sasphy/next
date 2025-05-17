@@ -7,6 +7,7 @@ import {
   PROTOCOL_PDA,
   BondingCurveType
 } from '../lib/idls';
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 export class TokenFactoryClient {
   private program: Program<MusicTokenFactory>;
@@ -106,7 +107,7 @@ export class TokenFactoryClient {
         mint: mintKeypair.publicKey,
         protocol: protocolPDA,
         liquidityPool: liquidityPoolKeypair.publicKey,
-        tokenProgram: web3.TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: web3.SystemProgram.programId,
         rent: web3.SYSVAR_RENT_PUBKEY
       })
@@ -148,8 +149,8 @@ export class TokenFactoryClient {
         artist: tokenFactory.artist,
         treasury: protocol.treasury,
         liquidityPool: tokenFactory.liquidityPool,
-        tokenProgram: web3.TOKEN_PROGRAM_ID,
-        associatedTokenProgram: web3.ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: web3.SystemProgram.programId,
         rent: web3.SYSVAR_RENT_PUBKEY
       })
@@ -167,10 +168,10 @@ export class TokenFactoryClient {
       await PublicKey.findProgramAddress(
         [
           walletAddress.toBuffer(),
-          web3.TOKEN_PROGRAM_ID.toBuffer(),
+          TOKEN_PROGRAM_ID.toBuffer(),
           tokenMintAddress.toBuffer(),
         ],
-        web3.ASSOCIATED_TOKEN_PROGRAM_ID
+        ASSOCIATED_TOKEN_PROGRAM_ID
       )
     )[0];
   }
