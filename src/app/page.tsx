@@ -10,7 +10,7 @@ import { useQuery } from 'convex/react';
 import { api } from '@/../../convex/_generated/api';
 import env from '@/lib/env';
 import Link from 'next/link';
-import { Music, ArrowRight, Disc, Sparkles, PlusCircle, Flame, Trophy, Star, TrendingUp, Clock, Play, Pause, Volume2 } from 'lucide-react';
+import { Music, ArrowRight, Plus, Disc, Sparkles, PlusCircle, Flame, Trophy, Star, TrendingUp, Clock, Play, Pause, Volume2 } from 'lucide-react';
 import Image from 'next/image';
 
 // Import Fiesta components
@@ -314,23 +314,24 @@ export default function HomePage() {
     <div className="token-homepage space-y-8 pb-16">
       {/* Header with Logo and Create Button */}
       <header className="container mx-auto px-4 py-4 flex justify-between items-center">
+        
+      <Link 
+                href="/create" 
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-1.5 px-4 rounded-lg font-medium flex items-center gap-1.5 ml-3 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Create
+              </Link>
         <div className="flex items-center gap-3">
           <Image 
-            src="/assets/logos/sasphy_logo.svg" 
+            src="/logo.svg" 
             alt="Sasphy" 
             width={36} 
             height={36} 
-            className="motion-scale-in-[0.9] motion-duration-[0.7s]"
+            className="motion-scale-in-[0.9] motion-duration-[0.7s] invert"
           />
-          <h1 className="text-xl font-display font-bold">Sasphy</h1>
+          <h1 className="text-xl font-display font-bold">Create Your Own Sound Token.</h1>
         </div>
-        <Link 
-          href="/token/create" 
-          className="token-create-button motion-scale-in-[0.95] motion-duration-[0.5s] motion-ease-bounce solana-button flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full"
-        >
-          <PlusCircle className="h-4 w-4" />
-          Create Token
-        </Link>
       </header>
       
       {/* 3 Column Layout */}

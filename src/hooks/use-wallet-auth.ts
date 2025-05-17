@@ -2,7 +2,7 @@
 
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useSasphy } from '@/components/providers/sasphy-provider';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { 
   SignatureResult, 
   VersionedTransaction, 
@@ -15,12 +15,22 @@ import bs58 from 'bs58';
 import { toast } from 'sonner';
 
 export function useWalletAuth() {
-  const { publicKey, signMessage, signTransaction, connected } = useWallet();
+  // Add a mounted state to handle hydration
+  const [mounted, setMounted] = useState(false);
+  
+  // Use optional chaining to safely handle missing wallet context
+  const wallet = useWallet();
+  const { publicKey, signMessage, signTransaction, connected } = wallet || {};
   const { login, logout, isAuthenticated, address } = useSasphy();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // Set mounted after hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleSignIn = useCallback(async () => {
-    if (!publicKey || !signMessage) {
+    if (!mounted || !publicKey || !signMessage) {
       toast.error('Wallet not connected or does not support message signing');
       return false;
     }
@@ -82,15 +92,28 @@ export function useWalletAuth() {
     } finally {
       setIsLoggingIn(false);
     }
-  }, [publicKey, signMessage, login]);
+  }, [publicKey, signMessage, login, mounted]);
 
   const handleSignOut = useCallback(() => {
     logout();
     toast.info('Signed out successfully');
   }, [logout]);
 
+  // Return empty values if not mounted to prevent client/server mismatch
+  if (!mounted) {
+    return {
+      isWalletConnected: false,
+      isAuthenticated: false,
+      isLoggingIn: false,
+      walletAddress: null,
+      signIn: () => Promise.resolve(false),
+      signOut: () => {},
+      authenticatedAddress: null
+    };
+  }
+
   return {
-    isWalletConnected: connected,
+    isWalletConnected: !!connected,
     isAuthenticated,
     isLoggingIn,
     walletAddress: publicKey?.toString() || null,

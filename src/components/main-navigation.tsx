@@ -106,7 +106,7 @@ export default function MainNavigation() {
             
             {mounted && isWalletConnected ? (
               <div className="flex items-center gap-2">
-                {isAuthenticated ? (
+                {/* {isAuthenticated ? (
                   <button 
                     onClick={signOut}
                     className="button-outline py-1.5 px-3 text-sm"
@@ -120,7 +120,7 @@ export default function MainNavigation() {
                   >
                     Sign In
                   </button>
-                )}
+                )} */}
                 <CombinedWalletConnectButton />
               </div>
             ) : (
@@ -140,7 +140,7 @@ export default function MainNavigation() {
           </div>
           
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
+          {/* <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 rounded-md text-foreground hover:bg-primary/10 focus:outline-none transition-colors"
@@ -152,7 +152,7 @@ export default function MainNavigation() {
                 <Menu className="h-6 w-6" />
               )}
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
       

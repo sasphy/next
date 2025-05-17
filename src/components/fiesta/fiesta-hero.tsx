@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
@@ -11,7 +11,21 @@ import {
 import { useWalletAuth } from '@/hooks/use-wallet-auth';
 
 const FiestaHero: React.FC = () => {
-  const { isWalletConnected, isAuthenticated, signIn } = useWalletAuth();
+  // Track component mount state for hydration safety
+  const [mounted, setMounted] = useState(false);
+  
+  // Get wallet auth with fallback for when it's not initialized
+  const walletAuth = useWalletAuth();
+  const { isWalletConnected, isAuthenticated, signIn } = walletAuth || {
+    isWalletConnected: false,
+    isAuthenticated: false,
+    signIn: () => Promise.resolve(false)
+  };
+  
+  // Set mounted after hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <section className="fiesta-hero relative pt-16 pb-20 overflow-hidden">

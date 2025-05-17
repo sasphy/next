@@ -11,22 +11,36 @@ import { Id } from '@/_generated/dataModel';
  * It ensures that when a wallet connects, a corresponding user profile exists in Convex
  */
 export function useConvexAuth() {
-  const { publicKey, connected } = useWallet();
+  // Add a mounted state to handle hydration
+  const [mounted, setMounted] = useState(false);
+  
+  // Use optional chaining to safely handle when wallet context isn't ready
+  const wallet = useWallet();
+  const { publicKey, connected } = wallet || {};
+  
   const [userId, setUserId] = useState<Id<'users'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Set mounted state after hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   const walletAddress = publicKey?.toString();
   
-  // Query to find a user by wallet address
+  // Query to find a user by wallet address - skip if not mounted or no wallet address
   const userQuery = useQuery(
     api.users.getByWalletAddress, 
-    walletAddress ? { walletAddress } : 'skip'
+    mounted && walletAddress ? { walletAddress } : 'skip'
   );
   
   // Mutation to create or update a user
   const upsertUser = useMutation(api.users.upsertUserFromWallet);
 
   useEffect(() => {
+    // Skip all processing if component is not mounted yet
+    if (!mounted) return;
+    
     const syncUser = async () => {
       setIsLoading(true);
       
@@ -56,13 +70,23 @@ export function useConvexAuth() {
     };
 
     syncUser();
-  }, [connected, walletAddress, userQuery, upsertUser]);
+  }, [connected, walletAddress, userQuery, upsertUser, mounted]);
+
+  // Return default values if not mounted
+  if (!mounted) {
+    return {
+      userId: null,
+      isLoading: true,
+      user: null,
+      isAuthenticated: false,
+    };
+  }
 
   return {
     userId,
     isLoading,
     user: userQuery,
-    isAuthenticated: !!userId && connected,
+    isAuthenticated: !!userId && !!connected,
   };
 }
 
